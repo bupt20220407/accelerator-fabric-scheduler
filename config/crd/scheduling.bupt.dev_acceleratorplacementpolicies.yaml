@@ -1,0 +1,90 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: acceleratorplacementpolicies.scheduling.bupt.dev
+spec:
+  group: scheduling.bupt.dev
+  scope: Namespaced
+  names:
+    plural: acceleratorplacementpolicies
+    singular: acceleratorplacementpolicy
+    kind: AcceleratorPlacementPolicy
+    shortNames: [appolicy]
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: [spec]
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              required: [topologyMode, weights, failurePolicy]
+              properties:
+                vendor:
+                  type: string
+                  default: any
+                  enum: [any, nvidia, huawei, amd]
+                products:
+                  type: array
+                  items:
+                    type: string
+                minimumMemoryMiB:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                  default: 0
+                topologyMode:
+                  type: string
+                  enum: [single-numa, same-pcie-root, fabric-clique, fabric-connected, best-effort]
+                minimumLinkBandwidthGBps:
+                  type: number
+                  format: double
+                  minimum: 0
+                  default: 0
+                maxFabricHops:
+                  type: integer
+                  format: int32
+                  minimum: 0
+                  default: 1
+                allowUnknownTopology:
+                  type: boolean
+                  default: false
+                weights:
+                  type: object
+                  required: [locality, fabric, fragmentation, headroom]
+                  x-kubernetes-validations:
+                    - rule: self.locality + self.fabric + self.fragmentation + self.headroom == 100
+                      message: weights must sum to 100
+                  properties:
+                    locality:
+                      type: integer
+                      format: int32
+                      minimum: 0
+                      maximum: 100
+                    fabric:
+                      type: integer
+                      format: int32
+                      minimum: 0
+                      maximum: 100
+                    fragmentation:
+                      type: integer
+                      format: int32
+                      minimum: 0
+                      maximum: 100
+                    headroom:
+                      type: integer
+                      format: int32
+                      minimum: 0
+                      maximum: 100
+                failurePolicy:
+                  type: string
+                  enum: [FailClosed, BestEffort]

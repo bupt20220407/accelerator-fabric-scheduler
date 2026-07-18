@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: topologyfit-smoke
+  namespace: default
+  labels:
+    app.kubernetes.io/name: topologyfit-smoke
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  containers:
+    - name: scheduler-version
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      args: ["--version"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true

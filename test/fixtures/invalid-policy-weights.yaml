@@ -1,0 +1,13 @@
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorPlacementPolicy
+metadata:
+  name: invalid-weights
+  namespace: default
+spec:
+  topologyMode: best-effort
+  weights:
+    locality: 50
+    fabric: 50
+    fragmentation: 50
+    headroom: 50
+  failurePolicy: BestEffort

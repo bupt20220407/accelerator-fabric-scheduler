@@ -1,0 +1,34 @@
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorTopology
+metadata:
+  name: accelerator-fabric-worker
+spec:
+  nodeName: accelerator-fabric-worker
+  observedGeneration: 1
+  source: fixture
+  devices:
+    - id: gpu0
+      vendor: nvidia
+      product: H100-SXM
+      resourceName: nvidia.com/gpu
+      numaNode: 0
+      pcieRoot: "0000:30"
+      fabricGroup: nvlink-clique-0
+      memoryMiB: 81920
+      health: Healthy
+    - id: gpu1
+      vendor: nvidia
+      product: H100-SXM
+      resourceName: nvidia.com/gpu
+      numaNode: 0
+      pcieRoot: "0000:30"
+      fabricGroup: nvlink-clique-0
+      memoryMiB: 81920
+      health: Healthy
+  links:
+    - source: gpu0
+      target: gpu1
+      type: nvlink
+      bandwidthGBps: 450
+      hops: 1
+      health: Healthy

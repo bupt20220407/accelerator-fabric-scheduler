@@ -1,0 +1,19 @@
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorPlacementPolicy
+metadata:
+  name: high-bandwidth-training
+  namespace: default
+spec:
+  vendor: nvidia
+  products: [H100-SXM]
+  minimumMemoryMiB: 80000
+  topologyMode: fabric-clique
+  minimumLinkBandwidthGBps: 300
+  maxFabricHops: 1
+  allowUnknownTopology: false
+  weights:
+    locality: 35
+    fabric: 35
+    fragmentation: 20
+    headroom: 10
+  failurePolicy: FailClosed
