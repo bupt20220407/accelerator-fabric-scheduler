@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-EXPECTED_VERSION="${SCHEDULER_VERSION:-v1.35.5-accelerator.0.8.0}"
+EXPECTED_VERSION="${SCHEDULER_VERSION:-v1.35.5-accelerator.0.9.0}"
 
 kubectl delete pod topologyfit-smoke --ignore-not-found --wait=true
 kubectl apply -f config/smoke/pod.yaml

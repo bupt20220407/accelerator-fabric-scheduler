@@ -18,11 +18,11 @@ Inspect API-server availability, request throttling, CRD conversion/validation e
 
 ## Scheduling
 
-Target: TopologyFit produces no internal framework errors, and no accelerator-profile Pod remains in the scheduler's unschedulable queue for more than 15 minutes without an acknowledged capacity or policy incident.
+Target: TopologyFit produces no internal framework errors, scheduler metrics remain continuously available, and no accelerator-profile Pod remains in the scheduler's unschedulable queue for more than 15 minutes without an acknowledged capacity or policy incident.
 
-TopologyFit `reject` is a valid policy/capacity outcome and is not counted as an internal error. Diagnose persistent pending Pods by checking PodGroup completeness, DRA claim allocation, topology freshness, requested vendor/product/count, and node capacity. The Coscheduling alert watches failed Permit evaluations; confirm the exact upstream metric labels after every Kubernetes or scheduler-plugins upgrade because framework metrics are not this project's API.
+TopologyFit `reject` is a valid policy/capacity outcome and is not counted as an internal error. Diagnose persistent pending Pods by checking PodGroup completeness, DRA claim allocation, topology freshness, requested vendor/product/count, and node capacity. Coscheduling Permit outcomes are proven by behavior and logs in the current harness. Kubernetes plugin execution-duration histograms are sampled and may expose no Permit series for a low-volume interval, so they are deliberately not used as an outcome alert.
 
-Pending-Pod and Permit alerts require scraping the kube-scheduler metrics endpoint. In the locked v1.35.5 build, `scheduler_pending_pods` has only a `queue` label, so this shared-scheduler process must remain dedicated to the accelerator profile for that alert to be profile-specific. Permit outcomes use the `scheduler_plugin_execution_duration_seconds_count` histogram counter with capitalized status values. These alerts describe control-plane symptoms, not a latency guarantee for training startup. Production objectives should segment priority class and tenant, and must account for intentional queueing, quotas, preemption, and maintenance.
+Pending-Pod and missing-metrics alerts require scraping the kube-scheduler metrics endpoint. In the locked v1.35.5 build, `scheduler_pending_pods` has only a `queue` label, so this shared-scheduler process must remain dedicated to the accelerator profile for that alert to be profile-specific. These alerts describe control-plane symptoms, not a latency guarantee for training startup. Production objectives should segment priority class and tenant, and must account for intentional queueing, quotas, preemption, and maintenance.
 
 ## DRA Data Plane
 
@@ -35,7 +35,7 @@ Zero published devices is critical after five minutes. Diagnose topology Ready/f
 Run `make monitoring-smoke` to validate rule syntax with the digest-pinned Prometheus `v3.5.0` image. Before enabling paging:
 
 1. Scrape scheduler, controller, every discovery Agent, and every DRA driver with stable `cluster`, `instance`, and `node` labels.
-2. Confirm the scheduler's `queue`, `extension_point`, `plugin`, and `status` label values against the deployed metrics endpoint; do not assume `scheduler_pending_pods` has a profile label.
+2. Confirm the scheduler's `queue`, `extension_point`, and `plugin` label values against the deployed metrics endpoint; do not assume `scheduler_pending_pods` has a profile label or sampled duration histograms always have a Permit series.
 3. Replay discovery loss, API errors, empty inventory, pending Pods, and Permit timeout in a staging cluster.
 4. Tune `for` durations from at least two weeks of baselines and connect each alert to an owned external runbook.
 

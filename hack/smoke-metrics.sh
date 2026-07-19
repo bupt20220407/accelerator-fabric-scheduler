@@ -72,10 +72,6 @@ if ! grep -q '^scheduler_pending_pods{queue="unschedulable"} ' "$temporary/sched
   echo "scheduler metrics did not expose the queue label expected by pending-Pod alerts" >&2
   exit 1
 fi
-if ! grep -q '^scheduler_plugin_execution_duration_seconds_count{extension_point="Permit",plugin="Coscheduling",status="Success"} ' "$temporary/scheduler.metrics"; then
-  echo "scheduler metrics did not expose the labels expected by the Coscheduling Permit alert" >&2
-  exit 1
-fi
 if ! grep 'accelerator_fabric_controller_reconciles_total{' "$temporary/controller.metrics" | grep 'controller="policy"' | grep -q 'result="success"'; then
   echo "controller metrics did not contain a successful policy reconciliation" >&2
   exit 1
@@ -97,6 +93,6 @@ if ! grep -q '^accelerator_fabric_discovery_last_success_timestamp_seconds{provi
   exit 1
 fi
 
-echo "scheduler, Coscheduling, controller, discovery, and node-local DRA health/metrics endpoints exposed expected W8 signals"
+echo "scheduler, Coscheduling, controller, discovery, and node-local DRA health/metrics endpoints exposed expected W9 signals"
 cleanup
 trap - EXIT

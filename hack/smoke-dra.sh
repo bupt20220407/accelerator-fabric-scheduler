@@ -5,11 +5,47 @@ driver="accelerator.scheduling.bupt.dev"
 pod="synthetic-dra-allocation"
 policy="synthetic-dra-nvidia"
 topology="accelerator-fabric-worker"
+discovery_paused=false
 
 restore_topology() {
-  kubectl patch acceleratortopology "$topology" --type=json -p='[{"op":"replace","path":"/spec/devices/0/health","value":"Healthy"}]' >/dev/null 2>&1 || true
+  kubectl patch acceleratortopology "$topology" --type=json -p='[{"op":"replace","path":"/spec/devices/0/health","value":"Healthy"}]' >/dev/null
 }
-trap restore_topology EXIT
+
+pause_discovery() {
+  kubectl -n accelerator-system patch daemonset accelerator-topology-discovery --type=merge \
+    -p='{"spec":{"template":{"spec":{"nodeSelector":{"scheduling.bupt.dev/discovery-paused":"true"}}}}}' >/dev/null
+  discovery_paused=true
+  attempt=0
+  while kubectl -n accelerator-system get pods -l app.kubernetes.io/name=accelerator-topology-discovery -o name | grep -q .; do
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 60 ]; then
+      echo "discovery Agent Pods did not stop" >&2
+      return 1
+    fi
+    sleep 2
+  done
+}
+
+restore_discovery() {
+  if [ "$discovery_paused" = true ]; then
+    kubectl -n accelerator-system patch daemonset accelerator-topology-discovery --type=merge \
+      -p='{"spec":{"template":{"spec":{"nodeSelector":null}}}}' >/dev/null
+    kubectl -n accelerator-system rollout status daemonset/accelerator-topology-discovery --timeout=180s >/dev/null
+    discovery_paused=false
+  fi
+}
+
+cleanup() {
+  kubectl delete pod "$pod" --ignore-not-found --wait=true >/dev/null 2>&1 || true
+  kubectl delete acceleratorplacementpolicy "$policy" --ignore-not-found --wait=true >/dev/null 2>&1 || true
+  if ! restore_topology >/dev/null 2>&1; then
+    echo "failed to restore NVIDIA topology health during cleanup" >&2
+  fi
+  if ! restore_discovery >/dev/null 2>&1; then
+    echo "failed to resume topology discovery during cleanup" >&2
+  fi
+}
+trap cleanup EXIT
 
 attempt=0
 while [ "$attempt" -lt 60 ]; do
@@ -39,6 +75,7 @@ kubectl delete pod "$pod" --ignore-not-found --wait=true
 kubectl delete acceleratorplacementpolicy "$policy" --ignore-not-found --wait=true
 kubectl delete resourceclaimtemplate "$policy" --ignore-not-found --wait=true
 
+pause_discovery
 kubectl patch acceleratortopology "$topology" --type=json -p='[{"op":"replace","path":"/spec/devices/0/health","value":"Unhealthy"}]' >/dev/null
 attempt=0
 while [ "$attempt" -lt 60 ]; do
@@ -144,8 +181,22 @@ while [ "$attempt" -lt 60 ]; do
       sleep 2
     done
     restore_topology
+    attempt=0
+    while [ "$attempt" -lt 60 ]; do
+      health="$(kubectl get resourceslices --field-selector "spec.driver=$driver,spec.nodeName=$topology" -o jsonpath='{.items[0].spec.devices[0].attributes.health.string}' 2>/dev/null || true)"
+      if [ "$health" = "Healthy" ]; then
+        break
+      fi
+      attempt=$((attempt + 1))
+      sleep 2
+    done
+    if [ "$health" != "Healthy" ]; then
+      echo "NVIDIA ResourceSlice health did not recover" >&2
+      exit 1
+    fi
+    restore_discovery
     trap - EXIT
-    echo "$claim was unprepared; generated claim/template were garbage collected"
+    echo "$claim was unprepared; generated claim/template were garbage collected and discovery resumed"
     exit 0
   fi
   attempt=$((attempt + 1))

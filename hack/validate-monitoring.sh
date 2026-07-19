@@ -15,11 +15,11 @@ for alert in \
   AcceleratorControllerReconcileErrors \
   AcceleratorTopologyFitErrors \
   AcceleratorSchedulerPodsUnschedulable \
-  AcceleratorCoschedulingPermitFailures \
+  AcceleratorSchedulerMetricsMissing \
   AcceleratorDRAPublishedDevicesMissing \
   AcceleratorDRAPublishedDevicesZero \
   AcceleratorDRAOperationErrors; do
   grep -q "alert: $alert" "$rules"
 done
 
-echo "promtool accepted all W8 recording and alert expressions"
+echo "promtool accepted all W9 recording and alert expressions"

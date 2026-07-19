@@ -54,10 +54,10 @@ The discovery endpoint exposed a nonzero success counter and last-success timest
 
 ```text
 scheduler_pending_pods{queue="unschedulable"}
-scheduler_plugin_execution_duration_seconds_count{extension_point="Permit",plugin="Coscheduling",status="Success"}
+scheduler_plugin_evaluation_total{extension_point="PreFilter",plugin="Coscheduling",profile="accelerator-scheduler"}
 ```
 
-The rules were corrected against those live series and promtool accepted all ten expressions. The kind result demonstrates rule syntax and source-signal shape only; it does not prove alert delivery, a 30-day availability target, or production error-budget compliance.
+The rules were corrected against those live series and promtool accepted all ten expressions. A later restart-heavy W9 run showed that plugin execution-duration histograms are sampled and may omit low-volume Permit series; the final rules therefore use scheduler metric availability plus pending queues rather than sampled Permit outcomes. The kind result demonstrates rule syntax and source-signal shape only; it does not prove alert delivery, a 30-day availability target, or production error-budget compliance.
 
 ## Final cluster state
 

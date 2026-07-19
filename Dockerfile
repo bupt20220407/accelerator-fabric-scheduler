@@ -3,8 +3,9 @@ FROM golang:1.25.5-bookworm@sha256:d9132cce84391efab786495288756d60e1da215b1f94e
 WORKDIR /workspace
 COPY go.mod go.sum ./
 RUN go mod download
-COPY . .
-ARG SCHEDULER_VERSION=v1.35.5-accelerator.0.8.0
+COPY cmd ./cmd
+COPY pkg ./pkg
+ARG SCHEDULER_VERSION=v1.35.5-accelerator.0.9.0
 RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath \
     -ldflags="-s -w -X k8s.io/component-base/version.gitVersion=${SCHEDULER_VERSION}" \
     -o /out/accelerator-scheduler ./cmd/scheduler

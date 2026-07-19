@@ -1,4 +1,4 @@
-# W8 fault matrix
+# W9 fault matrix
 
 | Fault | Injection | Expected behavior | Automated evidence | Remaining production work |
 |---|---|---|---|---|
@@ -13,10 +13,10 @@
 | Metrics endpoint loss | Stop or isolate a component Pod | Scrape fails while Kubernetes readiness reflects process availability | `hack/smoke-metrics.sh` validates all component endpoints; missing-series rules pass promtool | NetworkPolicy, TLS/auth for non-scheduler endpoints, and an alert-firing integration test |
 | Incomplete gang | Submit a two-member group with feasible 4-device and infeasible 5-device members | Feasible member waits, times out, and releases its TopologyFit reservation; neither member binds | `hack/smoke-gang.sh` | Larger groups, controller deletion races, scheduler failover, and tenant events |
 | Competing equal-priority gangs | Queue newer-group Pods before older-group Pods while the scheduler is paused | Older PodGroup receives all eight devices first; newer group starts only after release | `hack/smoke-gang-fairness.sh` | Starvation bounds, priorities, quotas, preemption, and sustained multi-tenant load |
-| Scheduler restart during Permit | Restart the scheduler while members wait | In-memory assumed state is discarded and Pods are retried from API state | not automated in W8 | Add restart injection and prove DRA/TopologyFit cleanup across scheduler failover |
+| Scheduler restart during Permit | Restart the scheduler while two DRA gang members wait and the third pool is absent | No claim allocation or Pod binding is committed; provisional nominations clear after timeout | `hack/smoke-dra-gang-failover.sh` | Leader-election failover, repeated crashes, API partition, and persisted post-Permit allocation recovery |
 | Discovery provider failure | Provider command/API returns an error | Agent preserves the last published object, records an error, and stops advancing last-success time | provider and metric unit paths plus stale/error alert syntax | Inject a failing provider in kind and verify alert firing/end-to-end recovery |
 | Discovery ownership conflict | An unmanaged or other-provider object already uses the node name | Agent refuses silent takeover and reports repeated discovery failure | `pkg/discovery/agent_test.go` | Kubernetes Event, condition, and operator-guided ownership transfer workflow |
-| Partial heterogeneous gang | One of three vendor pools is unavailable | Coscheduling must not admit a partial distributed workload; native claims remain node-local | successful three-vendor path is automated; failure path is not yet injected | Remove one ResourceSlice, verify Permit/claim cleanup, and cover scheduler restart races |
+| Partial heterogeneous gang | Pause discovery and delete the AMD topology so its DRA pool becomes empty | NVIDIA and Huawei may be nominated, but no member binds and no allocation commits; restored discovery enables a subsequent full gang | `hack/smoke-dra-gang-failover.sh` | Larger groups, multiple missing pools, mid-run device loss, and tenant-facing events |
 | SLO rule drift | Invalid PromQL or rule YAML is committed | CI fails before deployment | digest-pinned `promtool check rules` in `make monitoring-smoke` | Evaluate rules against recorded and live time series on every component upgrade |
 
-The matrix records prototype evidence, not a production reliability claim. Items in the final column remain explicitly out of scope for W8.
+The matrix records prototype evidence, not a production reliability claim. Items in the final column remain explicitly out of scope for W9.

@@ -48,12 +48,12 @@ groups:
         annotations:
           summary: Accelerator scheduler has retained unschedulable Pods for fifteen minutes
           runbook: docs/operations/slo.md#scheduling
-      - alert: AcceleratorCoschedulingPermitFailures
-        expr: sum(rate(scheduler_plugin_execution_duration_seconds_count{plugin="Coscheduling",extension_point="Permit",status!~"Success|Skip"}[5m])) > 0
+      - alert: AcceleratorSchedulerMetricsMissing
+        expr: absent(scheduler_pending_pods)
         for: 10m
-        labels: {severity: warning}
+        labels: {severity: critical}
         annotations:
-          summary: Coscheduling Permit evaluations are failing or timing out
+          summary: No accelerator scheduler metrics are available
           runbook: docs/operations/slo.md#scheduling
 
   - name: accelerator-fabric.dra
