@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: synthetic-nvidia-allocation
+  namespace: default
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  nodeSelector:
+    scheduling.bupt.dev/fixture: nvidia
+  containers:
+    - name: workload
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-workload"]
+      resources:
+        requests:
+          nvidia.com/gpu: 2
+        limits:
+          nvidia.com/gpu: 2
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: synthetic-ascend-allocation
+  namespace: default
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  nodeSelector:
+    scheduling.bupt.dev/fixture: ascend
+  containers:
+    - name: workload
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-workload"]
+      resources:
+        requests:
+          huawei.com/Ascend910: 2
+        limits:
+          huawei.com/Ascend910: 2
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: synthetic-amd-allocation
+  namespace: default
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  nodeSelector:
+    scheduling.bupt.dev/fixture: amd
+  containers:
+    - name: workload
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-workload"]
+      resources:
+        requests:
+          amd.com/gpu: 2
+        limits:
+          amd.com/gpu: 2
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true

@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: synthetic-nvidia-device-plugin
+  namespace: accelerator-system
+  labels:
+    app.kubernetes.io/name: synthetic-device-plugin
+    scheduling.bupt.dev/vendor: nvidia
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-device-plugin
+      scheduling.bupt.dev/vendor: nvidia
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: synthetic-device-plugin
+        scheduling.bupt.dev/vendor: nvidia
+    spec:
+      nodeSelector:
+        scheduling.bupt.dev/fixture: nvidia
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: plugin
+          image: accelerator-fabric-scheduler:dev
+          imagePullPolicy: IfNotPresent
+          command: ["/synthetic-device-plugin"]
+          args: ["--resource-name=nvidia.com/gpu", "--count=8", "--devices-per-numa=4"]
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+            type: Directory
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: synthetic-ascend-device-plugin
+  namespace: accelerator-system
+  labels:
+    app.kubernetes.io/name: synthetic-device-plugin
+    scheduling.bupt.dev/vendor: huawei
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-device-plugin
+      scheduling.bupt.dev/vendor: huawei
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: synthetic-device-plugin
+        scheduling.bupt.dev/vendor: huawei
+    spec:
+      nodeSelector:
+        scheduling.bupt.dev/fixture: ascend
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: plugin
+          image: accelerator-fabric-scheduler:dev
+          imagePullPolicy: IfNotPresent
+          command: ["/synthetic-device-plugin"]
+          args: ["--resource-name=huawei.com/Ascend910", "--count=8", "--devices-per-numa=4"]
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+            type: Directory
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: synthetic-amd-device-plugin
+  namespace: accelerator-system
+  labels:
+    app.kubernetes.io/name: synthetic-device-plugin
+    scheduling.bupt.dev/vendor: amd
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-device-plugin
+      scheduling.bupt.dev/vendor: amd
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: synthetic-device-plugin
+        scheduling.bupt.dev/vendor: amd
+    spec:
+      nodeSelector:
+        scheduling.bupt.dev/fixture: amd
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: plugin
+          image: accelerator-fabric-scheduler:dev
+          imagePullPolicy: IfNotPresent
+          command: ["/synthetic-device-plugin"]
+          args: ["--resource-name=amd.com/gpu", "--count=8", "--devices-per-numa=4"]
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+            type: Directory

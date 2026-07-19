@@ -2,7 +2,11 @@ SHELL := /bin/sh
 SCHEDULER_VERSION ?= v1.35.5-accelerator.0.1.0
 VERSION_LDFLAG := -X k8s.io/component-base/version.gitVersion=$(SCHEDULER_VERSION)
 
-.PHONY: fmt fmt-check vet test test-race build image kind-up deploy crd-smoke smoke e2e kind-down verify
+.PHONY: generate fmt fmt-check vet test test-race build image kind-up deploy crd-smoke topology-smoke device-smoke smoke e2e kind-down verify
+
+generate:
+	./hack/generate.sh
+	./hack/render-fixtures.sh
 
 fmt:
 	./hack/go.sh fmt ./cmd/... ./pkg/...
@@ -21,7 +25,10 @@ test-race:
 
 build:
 	mkdir -p bin
-	./hack/go.sh build -trimpath -ldflags '$(VERSION_LDFLAG)' -o bin/accelerator-scheduler ./cmd/scheduler
+	./hack/go.sh build -buildvcs=false -trimpath -ldflags '$(VERSION_LDFLAG)' -o bin/accelerator-scheduler ./cmd/scheduler
+	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-device-plugin ./cmd/synthetic-device-plugin
+	./hack/go.sh build -buildvcs=false -trimpath -o bin/topology-controller ./cmd/topology-controller
+	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-workload ./cmd/synthetic-workload
 
 image:
 	docker build --build-arg SCHEDULER_VERSION='$(SCHEDULER_VERSION)' -t "$${SCHEDULER_IMAGE:-accelerator-fabric-scheduler:dev}" .
@@ -38,9 +45,15 @@ smoke:
 crd-smoke:
 	./hack/validate-crds.sh
 
-e2e: kind-up deploy crd-smoke smoke
+topology-smoke:
+	./hack/smoke-topologies.sh
+
+device-smoke:
+	./hack/smoke-synthetic-devices.sh
+
+e2e: kind-up deploy crd-smoke topology-smoke device-smoke smoke
 
 kind-down:
 	./hack/kind-down.sh
 
-verify: fmt-check vet test build
+verify: fmt-check vet test test-race build

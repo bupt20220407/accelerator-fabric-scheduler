@@ -22,9 +22,13 @@ jobs:
           cache: true
       - name: Verify formatting
         run: make fmt-check
+      - name: Verify generated code and fixtures
+        run: make generate && git diff --exit-code
       - name: Vet
         run: make vet
       - name: Unit tests
         run: make test
+      - name: Race tests
+        run: make test-race
       - name: Build scheduler
         run: make build

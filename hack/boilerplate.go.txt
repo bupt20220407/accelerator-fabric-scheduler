@@ -1,0 +1,2 @@
+// Copyright 2026 The Accelerator Fabric Scheduler Authors.
+// All rights reserved.

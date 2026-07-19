@@ -1,0 +1,485 @@
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorTopology
+metadata:
+  name: accelerator-fabric-worker
+spec:
+  devices:
+  - fabricGroup: nvlink-clique-0
+    health: Healthy
+    id: gpu0
+    memoryMiB: 81920
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: H100-SXM
+    resourceName: nvidia.com/gpu
+    vendor: nvidia
+  - fabricGroup: nvlink-clique-0
+    health: Healthy
+    id: gpu1
+    memoryMiB: 81920
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: H100-SXM
+    resourceName: nvidia.com/gpu
+    vendor: nvidia
+  - fabricGroup: nvlink-clique-0
+    health: Healthy
+    id: gpu2
+    memoryMiB: 81920
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: H100-SXM
+    resourceName: nvidia.com/gpu
+    vendor: nvidia
+  - fabricGroup: nvlink-clique-0
+    health: Healthy
+    id: gpu3
+    memoryMiB: 81920
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: H100-SXM
+    resourceName: nvidia.com/gpu
+    vendor: nvidia
+  - fabricGroup: nvlink-clique-1
+    health: Healthy
+    id: gpu4
+    memoryMiB: 81920
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: H100-SXM
+    resourceName: nvidia.com/gpu
+    vendor: nvidia
+  - fabricGroup: nvlink-clique-1
+    health: Healthy
+    id: gpu5
+    memoryMiB: 81920
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: H100-SXM
+    resourceName: nvidia.com/gpu
+    vendor: nvidia
+  - fabricGroup: nvlink-clique-1
+    health: Healthy
+    id: gpu6
+    memoryMiB: 81920
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: H100-SXM
+    resourceName: nvidia.com/gpu
+    vendor: nvidia
+  - fabricGroup: nvlink-clique-1
+    health: Healthy
+    id: gpu7
+    memoryMiB: 81920
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: H100-SXM
+    resourceName: nvidia.com/gpu
+    vendor: nvidia
+  links:
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu0
+    target: gpu1
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu0
+    target: gpu2
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu0
+    target: gpu3
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu1
+    target: gpu2
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu1
+    target: gpu3
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu2
+    target: gpu3
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu4
+    target: gpu5
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu4
+    target: gpu6
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu4
+    target: gpu7
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu5
+    target: gpu6
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu5
+    target: gpu7
+    type: nvlink
+  - bandwidthGBps: 450
+    health: Healthy
+    hops: 1
+    source: gpu6
+    target: gpu7
+    type: nvlink
+  - bandwidthGBps: 64
+    health: Healthy
+    hops: 2
+    source: gpu3
+    target: gpu4
+    type: pcie
+  nodeName: accelerator-fabric-worker
+  observedGeneration: 1
+  source: fixture
+status: {}
+---
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorTopology
+metadata:
+  name: accelerator-fabric-worker2
+spec:
+  devices:
+  - fabricGroup: hccs-clique-0
+    health: Healthy
+    id: ascend0
+    memoryMiB: 65536
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: Ascend-910B
+    resourceName: huawei.com/Ascend910
+    vendor: huawei
+  - fabricGroup: hccs-clique-0
+    health: Healthy
+    id: ascend1
+    memoryMiB: 65536
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: Ascend-910B
+    resourceName: huawei.com/Ascend910
+    vendor: huawei
+  - fabricGroup: hccs-clique-0
+    health: Healthy
+    id: ascend2
+    memoryMiB: 65536
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: Ascend-910B
+    resourceName: huawei.com/Ascend910
+    vendor: huawei
+  - fabricGroup: hccs-clique-0
+    health: Healthy
+    id: ascend3
+    memoryMiB: 65536
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: Ascend-910B
+    resourceName: huawei.com/Ascend910
+    vendor: huawei
+  - fabricGroup: hccs-clique-1
+    health: Healthy
+    id: ascend4
+    memoryMiB: 65536
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: Ascend-910B
+    resourceName: huawei.com/Ascend910
+    vendor: huawei
+  - fabricGroup: hccs-clique-1
+    health: Healthy
+    id: ascend5
+    memoryMiB: 65536
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: Ascend-910B
+    resourceName: huawei.com/Ascend910
+    vendor: huawei
+  - fabricGroup: hccs-clique-1
+    health: Healthy
+    id: ascend6
+    memoryMiB: 65536
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: Ascend-910B
+    resourceName: huawei.com/Ascend910
+    vendor: huawei
+  - fabricGroup: hccs-clique-1
+    health: Healthy
+    id: ascend7
+    memoryMiB: 65536
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: Ascend-910B
+    resourceName: huawei.com/Ascend910
+    vendor: huawei
+  links:
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend0
+    target: ascend1
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend0
+    target: ascend2
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend0
+    target: ascend3
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend1
+    target: ascend2
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend1
+    target: ascend3
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend2
+    target: ascend3
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend4
+    target: ascend5
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend4
+    target: ascend6
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend4
+    target: ascend7
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend5
+    target: ascend6
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend5
+    target: ascend7
+    type: hccs
+  - bandwidthGBps: 392
+    health: Healthy
+    hops: 1
+    source: ascend6
+    target: ascend7
+    type: hccs
+  - bandwidthGBps: 64
+    health: Healthy
+    hops: 2
+    source: ascend3
+    target: ascend4
+    type: pcie
+  nodeName: accelerator-fabric-worker2
+  observedGeneration: 1
+  source: fixture
+status: {}
+---
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorTopology
+metadata:
+  name: accelerator-fabric-worker3
+spec:
+  devices:
+  - fabricGroup: xgmi-clique-0
+    health: Healthy
+    id: gpu0
+    memoryMiB: 196608
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: MI300X
+    resourceName: amd.com/gpu
+    vendor: amd
+  - fabricGroup: xgmi-clique-0
+    health: Healthy
+    id: gpu1
+    memoryMiB: 196608
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: MI300X
+    resourceName: amd.com/gpu
+    vendor: amd
+  - fabricGroup: xgmi-clique-0
+    health: Healthy
+    id: gpu2
+    memoryMiB: 196608
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: MI300X
+    resourceName: amd.com/gpu
+    vendor: amd
+  - fabricGroup: xgmi-clique-0
+    health: Healthy
+    id: gpu3
+    memoryMiB: 196608
+    numaNode: 0
+    pcieRoot: "0000:30"
+    product: MI300X
+    resourceName: amd.com/gpu
+    vendor: amd
+  - fabricGroup: xgmi-clique-1
+    health: Healthy
+    id: gpu4
+    memoryMiB: 196608
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: MI300X
+    resourceName: amd.com/gpu
+    vendor: amd
+  - fabricGroup: xgmi-clique-1
+    health: Healthy
+    id: gpu5
+    memoryMiB: 196608
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: MI300X
+    resourceName: amd.com/gpu
+    vendor: amd
+  - fabricGroup: xgmi-clique-1
+    health: Healthy
+    id: gpu6
+    memoryMiB: 196608
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: MI300X
+    resourceName: amd.com/gpu
+    vendor: amd
+  - fabricGroup: xgmi-clique-1
+    health: Healthy
+    id: gpu7
+    memoryMiB: 196608
+    numaNode: 1
+    pcieRoot: 0000:80
+    product: MI300X
+    resourceName: amd.com/gpu
+    vendor: amd
+  links:
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu0
+    target: gpu1
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu0
+    target: gpu2
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu0
+    target: gpu3
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu1
+    target: gpu2
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu1
+    target: gpu3
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu2
+    target: gpu3
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu4
+    target: gpu5
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu4
+    target: gpu6
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu4
+    target: gpu7
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu5
+    target: gpu6
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu5
+    target: gpu7
+    type: xgmi
+  - bandwidthGBps: 400
+    health: Healthy
+    hops: 1
+    source: gpu6
+    target: gpu7
+    type: xgmi
+  - bandwidthGBps: 64
+    health: Healthy
+    hops: 2
+    source: gpu3
+    target: gpu4
+    type: pcie
+  nodeName: accelerator-fabric-worker3
+  observedGeneration: 1
+  source: fixture
+status: {}

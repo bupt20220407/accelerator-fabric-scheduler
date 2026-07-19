@@ -11,5 +11,7 @@
 | scheduler-plugins | `v0.35.4-devel` candidate, not yet imported | Phase 2 Coscheduling integration only |
 | CRD API | `scheduling.bupt.dev/v1alpha1` | Experimental API; breaking changes are still allowed |
 | Custom scheduler binary | `v1.35.5-accelerator.0.1.0` | Kubernetes base plus project pre-release identity |
+| Kubernetes code-generator | `v0.35.5` | Matches the API/client-go patch baseline |
+| Device Plugin API | `v1beta1` from `k8s.io/kubelet v0.35.5` | Current kubelet registration and Allocate contract |
 
 Do not update a single Kubernetes module independently. Version upgrades require a dedicated change that runs unit tests, image build, kind smoke, and CRD server-side validation.
