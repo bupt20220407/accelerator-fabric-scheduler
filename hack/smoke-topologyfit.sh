@@ -17,6 +17,17 @@ case "$allocated" in
     ;;
 esac
 
+scheduler_logs="$(kubectl -n accelerator-system logs deployment/accelerator-scheduler --since=5m)"
+for lifecycle_message in \
+  'TopologyFit reserved advisory device combination' \
+  'TopologyFit verified advisory device combination' \
+  'TopologyFit released advisory device combination'; do
+  if ! printf '%s\n' "$scheduler_logs" | grep "$lifecycle_message" | grep -q "pod=\"default/$pass_pod\""; then
+    echo "$pass_pod did not emit scheduler lifecycle evidence: $lifecycle_message" >&2
+    exit 1
+  fi
+done
+
 attempt=0
 while [ "$attempt" -lt 60 ]; do
   node_name="$(kubectl get pod "$reject_pod" -o jsonpath='{.spec.nodeName}')"

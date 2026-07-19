@@ -29,6 +29,7 @@ const (
 type Plugin struct {
 	store        *topologycache.Store
 	policyLister listers.AcceleratorPlacementPolicyLister
+	ledger       *reservationLedger
 	now          func() time.Time
 	cacheTTL     time.Duration
 }
@@ -40,6 +41,7 @@ var (
 	_ framework.ScorePlugin     = (*Plugin)(nil)
 	_ framework.ReservePlugin   = (*Plugin)(nil)
 	_ framework.PreBindPlugin   = (*Plugin)(nil)
+	_ framework.PostBindPlugin  = (*Plugin)(nil)
 	_ framework.SignPlugin      = (*Plugin)(nil)
 )
 
@@ -78,6 +80,7 @@ func newPlugin(store *topologycache.Store, policyLister listers.AcceleratorPlace
 	return &Plugin{
 		store:        store,
 		policyLister: policyLister,
+		ledger:       newReservationLedger(),
 		now:          time.Now,
 		cacheTTL:     defaultCacheTTL,
 	}
@@ -146,6 +149,7 @@ func (p *Plugin) PreFilter(
 	for resourceName, requested := range requests {
 		state.Write(stateKey, &cycleData{
 			active:       true,
+			podKey:       podKey(pod),
 			policy:       *policy.Spec.DeepCopy(),
 			resourceName: resourceName,
 			requested:    requested,
@@ -223,20 +227,70 @@ func (p *Plugin) Score(
 
 func (p *Plugin) ScoreExtensions() framework.ScoreExtensions { return nil }
 
-// Reserve remains neutral in W3 because topology evaluation is node-level and
-// does not claim or expose exact device IDs.
-func (p *Plugin) Reserve(context.Context, framework.CycleState, *v1.Pod, string) *framework.Status {
+func (p *Plugin) Reserve(_ context.Context, state framework.CycleState, pod *v1.Pod, nodeName string) *framework.Status {
+	data, status := readCycleData(state)
+	if !status.IsSuccess() || !data.active {
+		return status
+	}
+	cached := p.store.Get(nodeName, p.now(), p.cacheTTL)
+	if cached.Availability != topologycache.AvailabilityReady {
+		if data.policy.FailurePolicy == schedulingv1alpha1.FailurePolicyBestEffort {
+			return nil
+		}
+		return framework.NewStatus(framework.Unschedulable, fmt.Sprintf("%s: topology for node %q is %s", Name, nodeName, cached.Availability))
+	}
+
+	reserved, err := p.ledger.Reserve(data.podKey, nodeName, func(blocked map[string]struct{}) []string {
+		devices := excludeReservedDevices(eligibleDevices(cached.Snapshot, data), blocked)
+		return selectDeviceIDs(cached.Snapshot, devices, data.policy, int(data.requested))
+	})
+	if err != nil {
+		return framework.NewStatus(framework.Unschedulable, fmt.Sprintf("%s: reserve device combination on %q: %v", Name, nodeName, err))
+	}
+	klog.InfoS("TopologyFit reserved advisory device combination", "pod", klog.KObj(pod), "podUID", podKey(pod), "node", nodeName, "deviceIDs", reserved.deviceIDs)
 	return nil
 }
 
-func (p *Plugin) Unreserve(context.Context, framework.CycleState, *v1.Pod, string) {}
+func (p *Plugin) Unreserve(_ context.Context, state framework.CycleState, pod *v1.Pod, nodeName string) {
+	data, status := readCycleData(state)
+	if !status.IsSuccess() || !data.active {
+		return
+	}
+	p.ledger.Release(data.podKey)
+	klog.InfoS("TopologyFit released advisory device combination", "pod", klog.KObj(pod), "podUID", podKey(pod), "node", nodeName, "outcome", "unreserve")
+}
 
 func (p *Plugin) PreBindPreFlight(context.Context, framework.CycleState, *v1.Pod, string) *framework.Status {
 	return nil
 }
 
-func (p *Plugin) PreBind(context.Context, framework.CycleState, *v1.Pod, string) *framework.Status {
+func (p *Plugin) PreBind(_ context.Context, state framework.CycleState, pod *v1.Pod, nodeName string) *framework.Status {
+	data, status := readCycleData(state)
+	if !status.IsSuccess() || !data.active {
+		return status
+	}
+	reserved, found := p.ledger.Get(data.podKey)
+	if !found {
+		cached := p.store.Get(nodeName, p.now(), p.cacheTTL)
+		if data.policy.FailurePolicy == schedulingv1alpha1.FailurePolicyBestEffort && cached.Availability != topologycache.AvailabilityReady {
+			return nil
+		}
+		return framework.NewStatus(framework.Error, fmt.Sprintf("%s: advisory reservation for pod %q is missing", Name, podKey(pod)))
+	}
+	if reserved.nodeName != nodeName {
+		return framework.NewStatus(framework.Error, fmt.Sprintf("%s: reservation node %q does not match bind node %q", Name, reserved.nodeName, nodeName))
+	}
+	klog.InfoS("TopologyFit verified advisory device combination", "pod", klog.KObj(pod), "podUID", podKey(pod), "node", nodeName, "deviceIDs", reserved.deviceIDs)
 	return nil
+}
+
+func (p *Plugin) PostBind(_ context.Context, state framework.CycleState, pod *v1.Pod, nodeName string) {
+	data, status := readCycleData(state)
+	if !status.IsSuccess() || !data.active {
+		return
+	}
+	p.ledger.Release(data.podKey)
+	klog.InfoS("TopologyFit released advisory device combination", "pod", klog.KObj(pod), "podUID", podKey(pod), "node", nodeName, "outcome", "bound")
 }
 
 func readCycleData(state framework.CycleState) (*cycleData, *framework.Status) {
@@ -255,6 +309,19 @@ func readCycleData(state framework.CycleState) (*cycleData, *framework.Status) {
 }
 
 func validatePolicy(spec schedulingv1alpha1.AcceleratorPlacementPolicySpec) error {
+	switch spec.Vendor {
+	case "", schedulingv1alpha1.VendorAny, schedulingv1alpha1.VendorNVIDIA, schedulingv1alpha1.VendorHuawei, schedulingv1alpha1.VendorAMD:
+	default:
+		return fmt.Errorf("unsupported accelerator vendor %q", spec.Vendor)
+	}
+	if spec.MinimumMemoryMiB < 0 || spec.MinimumLinkBandwidthGBps < 0 || spec.MaxFabricHops < 0 {
+		return fmt.Errorf("placement policy memory, bandwidth, and hop constraints must be non-negative")
+	}
+	for _, product := range spec.Products {
+		if product == "" {
+			return fmt.Errorf("placement policy products cannot contain an empty value")
+		}
+	}
 	switch spec.TopologyMode {
 	case schedulingv1alpha1.TopologyModeSingleNUMA,
 		schedulingv1alpha1.TopologyModeSamePCIeRoot,
@@ -274,4 +341,14 @@ func validatePolicy(spec schedulingv1alpha1.AcceleratorPlacementPolicySpec) erro
 		return fmt.Errorf("placement policy weights must be non-negative and sum to 100")
 	}
 	return nil
+}
+
+func podKey(pod *v1.Pod) string {
+	if pod == nil {
+		return ""
+	}
+	if pod.UID != "" {
+		return string(pod.UID)
+	}
+	return pod.Namespace + "/" + pod.Name
 }

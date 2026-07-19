@@ -9,6 +9,7 @@ import (
 
 type cycleData struct {
 	active       bool
+	podKey       string
 	policy       schedulingv1alpha1.AcceleratorPlacementPolicySpec
 	resourceName v1.ResourceName
 	requested    int64

@@ -49,6 +49,7 @@ func (p *Plugin) evaluate(data *cycleData, nodeInfo framework.NodeInfo) evaluati
 	}
 
 	devices := eligibleDevices(cached.Snapshot, data)
+	devices = excludeReservedDevices(devices, p.ledger.ReservedDeviceIDs(nodeName, data.podKey))
 	if int64(len(devices)) < data.requested {
 		return evaluation{reason: fmt.Sprintf("node %q has %d eligible topology devices, need %d", nodeName, len(devices), data.requested)}
 	}
@@ -57,11 +58,25 @@ func (p *Plugin) evaluate(data *cycleData, nodeInfo framework.NodeInfo) evaluati
 		return evaluation{reason: fmt.Sprintf("node %q has %d remaining %s, need %d", nodeName, remaining, data.resourceName, data.requested)}
 	}
 
-	if !topologyModeFits(cached.Snapshot, devices, data.policy, int(data.requested)) {
+	selection := selectDeviceIDs(cached.Snapshot, devices, data.policy, int(data.requested))
+	if len(selection) == 0 {
 		return evaluation{reason: fmt.Sprintf("node %q cannot satisfy topology mode %s for %d devices", nodeName, data.policy.TopologyMode, data.requested)}
 	}
 	features := scoreFeatures(cached.Snapshot, devices, data.policy, data.requested, remaining, allocatable)
 	return evaluation{feasible: true, score: weightedScore(features, data.policy.Weights)}
+}
+
+func excludeReservedDevices(
+	devices []schedulingv1alpha1.AcceleratorDevice,
+	reserved map[string]struct{},
+) []schedulingv1alpha1.AcceleratorDevice {
+	available := make([]schedulingv1alpha1.AcceleratorDevice, 0, len(devices))
+	for _, device := range devices {
+		if _, found := reserved[device.ID]; !found {
+			available = append(available, device)
+		}
+	}
+	return available
 }
 
 func eligibleDevices(snapshot *topology.Snapshot, data *cycleData) []schedulingv1alpha1.AcceleratorDevice {
@@ -102,38 +117,6 @@ func scalarHeadroom(nodeInfo framework.NodeInfo, resourceName v1.ResourceName) (
 		remaining = 0
 	}
 	return remaining, allocatable
-}
-
-func topologyModeFits(
-	snapshot *topology.Snapshot,
-	devices []schedulingv1alpha1.AcceleratorDevice,
-	policy schedulingv1alpha1.AcceleratorPlacementPolicySpec,
-	requested int,
-) bool {
-	if requested < 1 || len(devices) < requested {
-		return false
-	}
-	switch policy.TopologyMode {
-	case schedulingv1alpha1.TopologyModeBestEffort:
-		return true
-	case schedulingv1alpha1.TopologyModeSingleNUMA:
-		if maxNUMAGroup(devices, policy.AllowUnknownTopology) >= requested {
-			return true
-		}
-	case schedulingv1alpha1.TopologyModeSamePCIeRoot:
-		if maxStringGroup(devices, func(device schedulingv1alpha1.AcceleratorDevice) string { return device.PCIeRoot }, policy.AllowUnknownTopology) >= requested {
-			return true
-		}
-	case schedulingv1alpha1.TopologyModeFabricClique:
-		if hasFabricClique(snapshot, devices, policy, requested) {
-			return true
-		}
-	case schedulingv1alpha1.TopologyModeFabricConnected:
-		if maxFabricComponent(snapshot, devices, policy) >= requested {
-			return true
-		}
-	}
-	return false
 }
 
 func maxNUMAGroup(devices []schedulingv1alpha1.AcceleratorDevice, allowUnknown bool) int {
@@ -187,82 +170,6 @@ func qualifiesFabricLink(link schedulingv1alpha1.AcceleratorLink, policy schedul
 		return false
 	}
 	return link.BandwidthGBps >= policy.MinimumLinkBandwidthGBps && link.Hops <= policy.MaxFabricHops
-}
-
-func hasFabricClique(
-	snapshot *topology.Snapshot,
-	devices []schedulingv1alpha1.AcceleratorDevice,
-	policy schedulingv1alpha1.AcceleratorPlacementPolicySpec,
-	requested int,
-) bool {
-	ids := make([]string, 0, len(devices))
-	for _, device := range devices {
-		ids = append(ids, device.ID)
-	}
-	var search func(chosen, candidates []string) bool
-	search = func(chosen, candidates []string) bool {
-		if len(chosen) >= requested {
-			return true
-		}
-		if len(chosen)+len(candidates) < requested {
-			return false
-		}
-		for index, candidate := range candidates {
-			connected := true
-			for _, member := range chosen {
-				link, found := snapshot.LinkBetween(candidate, member)
-				if !found || !qualifiesFabricLink(link, policy) {
-					connected = false
-					break
-				}
-			}
-			if connected && search(append(chosen, candidate), candidates[index+1:]) {
-				return true
-			}
-		}
-		return false
-	}
-	return search(nil, ids)
-}
-
-func maxFabricComponent(
-	snapshot *topology.Snapshot,
-	devices []schedulingv1alpha1.AcceleratorDevice,
-	policy schedulingv1alpha1.AcceleratorPlacementPolicySpec,
-) int {
-	eligible := make(map[string]struct{}, len(devices))
-	for _, device := range devices {
-		eligible[device.ID] = struct{}{}
-	}
-	visited := make(map[string]struct{}, len(devices))
-	maximum := 0
-	for _, start := range devices {
-		if _, found := visited[start.ID]; found {
-			continue
-		}
-		queue := []string{start.ID}
-		visited[start.ID] = struct{}{}
-		size := 0
-		for len(queue) > 0 {
-			current := queue[0]
-			queue = queue[1:]
-			size++
-			for candidate := range eligible {
-				if _, found := visited[candidate]; found {
-					continue
-				}
-				link, found := snapshot.LinkBetween(current, candidate)
-				if found && qualifiesFabricLink(link, policy) {
-					visited[candidate] = struct{}{}
-					queue = append(queue, candidate)
-				}
-			}
-		}
-		if size > maximum {
-			maximum = size
-		}
-	}
-	return maximum
 }
 
 type features struct {

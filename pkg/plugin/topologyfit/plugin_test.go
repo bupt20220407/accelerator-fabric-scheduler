@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	toolscache "k8s.io/client-go/tools/cache"
 	framework "k8s.io/kube-scheduler/framework"
 	internalframework "k8s.io/kubernetes/pkg/scheduler/framework"
@@ -155,20 +156,82 @@ func TestSignPodIncludesPolicyAndRequest(t *testing.T) {
 	}
 }
 
-func TestW3BindingHooksRemainNeutral(t *testing.T) {
-	plugin := newPlugin(topologycache.NewStore(), nil)
+func TestReservationLifecycle(t *testing.T) {
+	plugin := testPlugin(t, testPolicy(schedulingv1alpha1.TopologyModeFabricClique, schedulingv1alpha1.FailurePolicyFailClosed), true)
 	state := internalframework.NewCycleState()
 	pod := testPod(2)
+	pod.UID = types.UID("pod-1")
+	if _, status := plugin.PreFilter(context.Background(), state, pod, nil); !status.IsSuccess() {
+		t.Fatalf("PreFilter() status = %v", status)
+	}
 	if status := plugin.Reserve(context.Background(), state, pod, testNodeName); !status.IsSuccess() {
 		t.Fatalf("Reserve() status = %v", status)
 	}
-	plugin.Unreserve(context.Background(), state, pod, testNodeName)
+	reserved, found := plugin.ledger.Get(string(pod.UID))
+	if !found || len(reserved.deviceIDs) != 2 || reserved.deviceIDs[0] != "gpu0" || reserved.deviceIDs[1] != "gpu1" {
+		t.Fatalf("reservation = (%+v, %v)", reserved, found)
+	}
 	if status := plugin.PreBindPreFlight(context.Background(), state, pod, testNodeName); !status.IsSuccess() {
 		t.Fatalf("PreBindPreFlight() status = %v", status)
 	}
 	if status := plugin.PreBind(context.Background(), state, pod, testNodeName); !status.IsSuccess() {
 		t.Fatalf("PreBind() status = %v", status)
 	}
+	plugin.PostBind(context.Background(), state, pod, testNodeName)
+	if plugin.ledger.Len() != 0 {
+		t.Fatalf("PostBind() left %d reservations", plugin.ledger.Len())
+	}
+
+	if status := plugin.Reserve(context.Background(), state, pod, testNodeName); !status.IsSuccess() {
+		t.Fatalf("second Reserve() status = %v", status)
+	}
+	plugin.Unreserve(context.Background(), state, pod, testNodeName)
+	if plugin.ledger.Len() != 0 {
+		t.Fatalf("Unreserve() left %d reservations", plugin.ledger.Len())
+	}
+}
+
+func TestReservationsSelectDisjointCliques(t *testing.T) {
+	plugin := testPlugin(t, testPolicy(schedulingv1alpha1.TopologyModeFabricClique, schedulingv1alpha1.FailurePolicyFailClosed), true)
+	firstPod, secondPod := testPod(4), testPod(4)
+	firstPod.UID, secondPod.UID = types.UID("pod-1"), types.UID("pod-2")
+	firstState, secondState := internalframework.NewCycleState(), internalframework.NewCycleState()
+	for _, item := range []struct {
+		pod   *v1.Pod
+		state framework.CycleState
+	}{{firstPod, firstState}, {secondPod, secondState}} {
+		if _, status := plugin.PreFilter(context.Background(), item.state, item.pod, nil); !status.IsSuccess() {
+			t.Fatalf("PreFilter(%s) status = %v", item.pod.UID, status)
+		}
+		if status := plugin.Reserve(context.Background(), item.state, item.pod, testNodeName); !status.IsSuccess() {
+			t.Fatalf("Reserve(%s) status = %v", item.pod.UID, status)
+		}
+	}
+	first, _ := plugin.ledger.Get("pod-1")
+	second, _ := plugin.ledger.Get("pod-2")
+	if got := first.deviceIDs; len(got) != 4 || got[0] != "gpu0" || got[3] != "gpu3" {
+		t.Fatalf("first reservation = %v", got)
+	}
+	if got := second.deviceIDs; len(got) != 4 || got[0] != "gpu4" || got[3] != "gpu7" {
+		t.Fatalf("second reservation = %v", got)
+	}
+}
+
+func TestUnannotatedBindingHooksRemainNeutral(t *testing.T) {
+	plugin := newPlugin(topologycache.NewStore(), nil)
+	state := internalframework.NewCycleState()
+	pod := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "ordinary", Namespace: "default"}}
+	if _, status := plugin.PreFilter(context.Background(), state, pod, nil); !status.IsSuccess() {
+		t.Fatalf("PreFilter() status = %v", status)
+	}
+	if status := plugin.Reserve(context.Background(), state, pod, testNodeName); !status.IsSuccess() {
+		t.Fatalf("Reserve() status = %v", status)
+	}
+	plugin.Unreserve(context.Background(), state, pod, testNodeName)
+	if status := plugin.PreBind(context.Background(), state, pod, testNodeName); !status.IsSuccess() {
+		t.Fatalf("PreBind() status = %v", status)
+	}
+	plugin.PostBind(context.Background(), state, pod, testNodeName)
 }
 
 func testPlugin(t *testing.T, policy *schedulingv1alpha1.AcceleratorPlacementPolicy, topologyReady bool) *Plugin {
