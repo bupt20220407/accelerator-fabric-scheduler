@@ -1,0 +1,7 @@
+apiVersion: scheduling.x-k8s.io/v1alpha1
+kind: PodGroup
+metadata:
+  name: invalid-zero-member
+  namespace: default
+spec:
+  minMember: 0

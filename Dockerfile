@@ -4,7 +4,7 @@ WORKDIR /workspace
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-ARG SCHEDULER_VERSION=v1.35.5-accelerator.0.6.0
+ARG SCHEDULER_VERSION=v1.35.5-accelerator.0.7.0
 RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath \
     -ldflags="-s -w -X k8s.io/component-base/version.gitVersion=${SCHEDULER_VERSION}" \
     -o /out/accelerator-scheduler ./cmd/scheduler
@@ -18,6 +18,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath -ldflags="-s -w"
     -o /out/synthetic-dra-driver ./cmd/synthetic-dra-driver
 RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath -ldflags="-s -w" \
     -o /out/synthetic-dra-workload ./cmd/synthetic-dra-workload
+RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath -ldflags="-s -w" \
+    -o /out/synthetic-gang-workload ./cmd/synthetic-gang-workload
 
 FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
@@ -27,5 +29,6 @@ COPY --from=builder /out/topology-controller /topology-controller
 COPY --from=builder /out/synthetic-workload /synthetic-workload
 COPY --from=builder /out/synthetic-dra-driver /synthetic-dra-driver
 COPY --from=builder /out/synthetic-dra-workload /synthetic-dra-workload
+COPY --from=builder /out/synthetic-gang-workload /synthetic-gang-workload
 USER 65532:65532
 ENTRYPOINT ["/accelerator-scheduler"]

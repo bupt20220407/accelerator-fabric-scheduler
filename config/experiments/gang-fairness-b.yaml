@@ -1,0 +1,8 @@
+apiVersion: scheduling.x-k8s.io/v1alpha1
+kind: PodGroup
+metadata:
+  name: w7-fair-b
+  namespace: default
+spec:
+  minMember: 2
+  scheduleTimeoutSeconds: 10

@@ -14,4 +14,9 @@ if kubectl apply --dry-run=server -f test/fixtures/invalid-policy-dra-connected.
   exit 1
 fi
 
-echo "CRD validation accepted valid samples and rejected invalid weights/DRA mode"
+if kubectl apply --dry-run=server -f test/fixtures/invalid-podgroup-min-member.yaml >/dev/null 2>&1; then
+  echo "zero-member PodGroup unexpectedly passed API server validation" >&2
+  exit 1
+fi
+
+echo "CRD validation accepted valid samples and rejected invalid weights/DRA mode/PodGroup size"

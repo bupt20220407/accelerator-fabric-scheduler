@@ -1,8 +1,8 @@
 SHELL := /bin/sh
-SCHEDULER_VERSION ?= v1.35.5-accelerator.0.6.0
+SCHEDULER_VERSION ?= v1.35.5-accelerator.0.7.0
 VERSION_LDFLAG := -X k8s.io/component-base/version.gitVersion=$(SCHEDULER_VERSION)
 
-.PHONY: generate fmt fmt-check vet test test-race build image kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke topology-aware-smoke fragmentation-smoke metrics-smoke smoke benchmark benchmark-allocation e2e kind-down verify
+.PHONY: generate fmt fmt-check vet test test-race build image kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke topology-aware-smoke fragmentation-smoke gang-smoke gang-fairness-smoke metrics-smoke smoke benchmark benchmark-allocation e2e kind-down verify
 
 generate:
 	./hack/generate.sh
@@ -31,6 +31,7 @@ build:
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-workload ./cmd/synthetic-workload
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-dra-driver ./cmd/synthetic-dra-driver
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-dra-workload ./cmd/synthetic-dra-workload
+	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-gang-workload ./cmd/synthetic-gang-workload
 
 image:
 	docker build --build-arg SCHEDULER_VERSION='$(SCHEDULER_VERSION)' -t "$${SCHEDULER_IMAGE:-accelerator-fabric-scheduler:dev}" .
@@ -62,6 +63,12 @@ topology-aware-smoke:
 fragmentation-smoke:
 	FRAGMENTATION_ROUNDS="$${FRAGMENTATION_ROUNDS:-2}" ./hack/smoke-fragmentation.sh
 
+gang-smoke:
+	./hack/smoke-gang.sh
+
+gang-fairness-smoke:
+	GANG_FAIRNESS_ROUNDS="$${GANG_FAIRNESS_ROUNDS:-2}" ./hack/smoke-gang-fairness.sh
+
 metrics-smoke:
 	./hack/smoke-metrics.sh
 
@@ -71,7 +78,7 @@ benchmark:
 benchmark-allocation:
 	./hack/benchmark-allocation.sh
 
-e2e: kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke topology-aware-smoke fragmentation-smoke smoke metrics-smoke
+e2e: kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke topology-aware-smoke fragmentation-smoke gang-smoke gang-fairness-smoke smoke metrics-smoke
 
 kind-down:
 	./hack/kind-down.sh

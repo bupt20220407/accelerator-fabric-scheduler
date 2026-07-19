@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: w7-fair-b-0
+  namespace: default
+  labels: {scheduling.x-k8s.io/pod-group: w7-fair-b}
+  annotations: {scheduling.bupt.dev/placement-policy: w7-fairness-clique}
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  containers:
+    - name: worker
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-gang-workload"]
+      args: ["--member=fair-b-0", "--hold=8s"]
+      resources:
+        requests: {nvidia.com/gpu: 4}
+        limits: {nvidia.com/gpu: 4}
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: w7-fair-b-1
+  namespace: default
+  labels: {scheduling.x-k8s.io/pod-group: w7-fair-b}
+  annotations: {scheduling.bupt.dev/placement-policy: w7-fairness-clique}
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  containers:
+    - name: worker
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-gang-workload"]
+      args: ["--member=fair-b-1", "--hold=8s"]
+      resources:
+        requests: {nvidia.com/gpu: 4}
+        limits: {nvidia.com/gpu: 4}
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: w7-fair-a-0
+  namespace: default
+  labels: {scheduling.x-k8s.io/pod-group: w7-fair-a}
+  annotations: {scheduling.bupt.dev/placement-policy: w7-fairness-clique}
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  containers:
+    - name: worker
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-gang-workload"]
+      args: ["--member=fair-a-0", "--hold=8s"]
+      resources:
+        requests: {nvidia.com/gpu: 4}
+        limits: {nvidia.com/gpu: 4}
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: w7-fair-a-1
+  namespace: default
+  labels: {scheduling.x-k8s.io/pod-group: w7-fair-a}
+  annotations: {scheduling.bupt.dev/placement-policy: w7-fairness-clique}
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  containers:
+    - name: worker
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-gang-workload"]
+      args: ["--member=fair-a-1", "--hold=8s"]
+      resources:
+        requests: {nvidia.com/gpu: 4}
+        limits: {nvidia.com/gpu: 4}
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true

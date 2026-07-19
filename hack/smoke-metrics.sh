@@ -46,8 +46,19 @@ curl -kfsS -H "Authorization: Bearer $scheduler_token" https://127.0.0.1:19059/m
 curl -fsS http://127.0.0.1:19081/metrics > "$temporary/controller.metrics"
 curl -fsS http://127.0.0.1:19082/metrics > "$temporary/dra.metrics"
 
+if [ -n "${METRICS_EVIDENCE_DIR:-}" ]; then
+  mkdir -p "$METRICS_EVIDENCE_DIR"
+  cp "$temporary/scheduler.metrics" "$METRICS_EVIDENCE_DIR/scheduler.metrics"
+  cp "$temporary/controller.metrics" "$METRICS_EVIDENCE_DIR/controller.metrics"
+  cp "$temporary/dra.metrics" "$METRICS_EVIDENCE_DIR/dra.metrics"
+fi
+
 if ! grep 'accelerator_fabric_scheduler_topologyfit_operations_total{' "$temporary/scheduler.metrics" | grep 'operation="reserve"' | grep -q 'result="success"'; then
   echo "scheduler metrics did not contain a successful TopologyFit reservation" >&2
+  exit 1
+fi
+if ! grep '^scheduler_plugin_evaluation_total{' "$temporary/scheduler.metrics" | grep 'plugin="Coscheduling"' | grep -qv ' 0$'; then
+  echo "scheduler metrics did not contain a Coscheduling evaluation" >&2
   exit 1
 fi
 if ! grep 'accelerator_fabric_controller_reconciles_total{' "$temporary/controller.metrics" | grep 'controller="policy"' | grep -q 'result="success"'; then
@@ -63,6 +74,6 @@ if ! grep -q '^accelerator_fabric_dra_prepared_claims 0$' "$temporary/dra.metric
   exit 1
 fi
 
-echo "scheduler, controller, and node-local DRA health/metrics endpoints exposed expected W6 signals"
+echo "scheduler, Coscheduling, controller, and node-local DRA health/metrics endpoints exposed expected W7 signals"
 cleanup
 trap - EXIT

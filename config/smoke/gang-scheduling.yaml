@@ -1,0 +1,78 @@
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorPlacementPolicy
+metadata:
+  name: w7-gang-clique
+  namespace: default
+spec:
+  vendor: nvidia
+  products: [H100-SXM]
+  minimumMemoryMiB: 80000
+  topologyMode: fabric-clique
+  minimumLinkBandwidthGBps: 300
+  maxFabricHops: 1
+  allowUnknownTopology: false
+  weights: {locality: 35, fabric: 35, fragmentation: 20, headroom: 10}
+  failurePolicy: FailClosed
+---
+apiVersion: scheduling.x-k8s.io/v1alpha1
+kind: PodGroup
+metadata:
+  name: w7-gang-pass
+  namespace: default
+spec:
+  minMember: 2
+  scheduleTimeoutSeconds: 10
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: w7-gang-pass-0
+  namespace: default
+  labels:
+    scheduling.x-k8s.io/pod-group: w7-gang-pass
+  annotations:
+    scheduling.bupt.dev/placement-policy: w7-gang-clique
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  containers:
+    - name: worker
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-gang-workload"]
+      args: ["--member=pass-0", "--hold=20s"]
+      resources:
+        requests: {nvidia.com/gpu: 4}
+        limits: {nvidia.com/gpu: 4}
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: w7-gang-pass-1
+  namespace: default
+  labels:
+    scheduling.x-k8s.io/pod-group: w7-gang-pass
+  annotations:
+    scheduling.bupt.dev/placement-policy: w7-gang-clique
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  containers:
+    - name: worker
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-gang-workload"]
+      args: ["--member=pass-1", "--hold=20s"]
+      resources:
+        requests: {nvidia.com/gpu: 4}
+        limits: {nvidia.com/gpu: 4}
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true

@@ -17,6 +17,9 @@ rules:
   - apiGroups: ["scheduling.bupt.dev"]
     resources: ["acceleratortopologies", "acceleratorplacementpolicies"]
     verbs: ["get", "list", "watch"]
+  - apiGroups: ["scheduling.x-k8s.io"]
+    resources: ["podgroups"]
+    verbs: ["get", "list", "watch"]
   - nonResourceURLs: ["/metrics"]
     verbs: ["get"]
 ---
@@ -91,6 +94,18 @@ data:
             enabled:
               - name: TopologyFit
                 weight: 1
+              - name: Coscheduling
+          queueSort:
+            enabled:
+              - name: Coscheduling
+            disabled:
+              - name: "*"
+        pluginConfig:
+          - name: Coscheduling
+            args:
+              permitWaitingTimeSeconds: 10
+              podGroupBackoffSeconds: 5
+              podGroupRejectPercentage: 100
 ---
 apiVersion: apps/v1
 kind: Deployment
