@@ -1,0 +1,45 @@
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaim
+metadata:
+  name: synthetic-dra-nvidia
+  namespace: default
+spec:
+  devices:
+    requests:
+      - name: accelerators
+        exactly:
+          deviceClassName: bupt-accelerator
+          allocationMode: ExactCount
+          count: 4
+          selectors:
+            - cel:
+                expression: device.attributes["accelerator.scheduling.bupt.dev"].vendor == "nvidia"
+    constraints:
+      - requests: [accelerators]
+        matchAttribute: accelerator.scheduling.bupt.dev/fabricGroup
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: synthetic-dra-allocation
+  namespace: default
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  resourceClaims:
+    - name: accelerators
+      resourceClaimName: synthetic-dra-nvidia
+  containers:
+    - name: workload
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-dra-workload"]
+      args: ["--expected=4", "--hold=60s"]
+      resources:
+        claims:
+          - name: accelerators
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true

@@ -1,0 +1,114 @@
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: bupt-accelerator
+spec:
+  selectors:
+    - cel:
+        expression: device.driver == "accelerator.scheduling.bupt.dev"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: synthetic-dra-driver
+  namespace: accelerator-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: synthetic-dra-driver
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get"]
+  - apiGroups: ["resource.k8s.io"]
+    resources: ["resourceclaims"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["resource.k8s.io"]
+    resources: ["resourceslices"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: synthetic-dra-driver
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: synthetic-dra-driver
+subjects:
+  - kind: ServiceAccount
+    name: synthetic-dra-driver
+    namespace: accelerator-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: synthetic-dra-driver
+  namespace: accelerator-system
+  labels:
+    app.kubernetes.io/name: synthetic-dra-driver
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-dra-driver
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: synthetic-dra-driver
+    spec:
+      serviceAccountName: synthetic-dra-driver
+      automountServiceAccountToken: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: scheduling.bupt.dev/fixture
+                    operator: Exists
+      securityContext:
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: driver
+          image: accelerator-fabric-scheduler:dev
+          imagePullPolicy: IfNotPresent
+          command: ["/synthetic-dra-driver"]
+          args: ["--node-name=$(NODE_NAME)"]
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: kubelet-plugins
+              mountPath: /var/lib/kubelet/plugins
+            - name: kubelet-registry
+              mountPath: /var/lib/kubelet/plugins_registry
+            - name: cdi
+              mountPath: /var/run/cdi
+      volumes:
+        - name: kubelet-plugins
+          hostPath:
+            path: /var/lib/kubelet/plugins
+            type: DirectoryOrCreate
+        - name: kubelet-registry
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: Directory
+        - name: cdi
+          hostPath:
+            path: /var/run/cdi
+            type: DirectoryOrCreate

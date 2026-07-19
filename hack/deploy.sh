@@ -3,7 +3,7 @@ set -eu
 
 CLUSTER_NAME="${KIND_CLUSTER_NAME:-accelerator-fabric}"
 IMAGE="${SCHEDULER_IMAGE:-accelerator-fabric-scheduler:dev}"
-SCHEDULER_VERSION="${SCHEDULER_VERSION:-v1.35.5-accelerator.0.3.0}"
+SCHEDULER_VERSION="${SCHEDULER_VERSION:-v1.35.5-accelerator.0.4.0}"
 
 docker build --build-arg SCHEDULER_VERSION="$SCHEDULER_VERSION" -t "$IMAGE" .
 kind load docker-image --name "$CLUSTER_NAME" "$IMAGE"
@@ -17,4 +17,6 @@ for daemonset in synthetic-nvidia-device-plugin synthetic-ascend-device-plugin s
   kubectl -n accelerator-system rollout restart "daemonset/${daemonset}"
   kubectl -n accelerator-system rollout status "daemonset/${daemonset}" --timeout=180s
 done
+kubectl -n accelerator-system rollout restart daemonset/synthetic-dra-driver
+kubectl -n accelerator-system rollout status daemonset/synthetic-dra-driver --timeout=180s
 kubectl apply -f config/fixtures/topologies.generated.yaml
