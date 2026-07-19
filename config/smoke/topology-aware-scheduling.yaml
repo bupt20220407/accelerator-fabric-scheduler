@@ -1,0 +1,71 @@
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorPlacementPolicy
+metadata:
+  name: w3-fabric-clique
+  namespace: default
+spec:
+  vendor: nvidia
+  products: [H100-SXM]
+  minimumMemoryMiB: 80000
+  topologyMode: fabric-clique
+  minimumLinkBandwidthGBps: 300
+  maxFabricHops: 1
+  allowUnknownTopology: false
+  weights:
+    locality: 35
+    fabric: 35
+    fragmentation: 20
+    headroom: 10
+  failurePolicy: FailClosed
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: topologyfit-clique-pass
+  namespace: default
+  annotations:
+    scheduling.bupt.dev/placement-policy: w3-fabric-clique
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  containers:
+    - name: workload
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-workload"]
+      resources:
+        requests:
+          nvidia.com/gpu: 4
+        limits:
+          nvidia.com/gpu: 4
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: topologyfit-clique-reject
+  namespace: default
+  annotations:
+    scheduling.bupt.dev/placement-policy: w3-fabric-clique
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  containers:
+    - name: workload
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-workload"]
+      resources:
+        requests:
+          nvidia.com/gpu: 5
+        limits:
+          nvidia.com/gpu: 5
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true

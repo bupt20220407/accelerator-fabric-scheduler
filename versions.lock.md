@@ -10,7 +10,7 @@
 | kubectl | `v1.36.2` client | One-minor skew from the v1.35.5 cluster |
 | scheduler-plugins | `v0.35.4-devel` candidate, not yet imported | Phase 2 Coscheduling integration only |
 | CRD API | `scheduling.bupt.dev/v1alpha1` | Experimental API; breaking changes are still allowed |
-| Custom scheduler binary | `v1.35.5-accelerator.0.1.0` | Kubernetes base plus project pre-release identity |
+| Custom scheduler binary | `v1.35.5-accelerator.0.2.0` | W3 topology-aware node placement identity |
 | Kubernetes code-generator | `v0.35.5` | Matches the API/client-go patch baseline |
 | Device Plugin API | `v1beta1` from `k8s.io/kubelet v0.35.5` | Current kubelet registration and Allocate contract |
 

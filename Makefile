@@ -1,8 +1,8 @@
 SHELL := /bin/sh
-SCHEDULER_VERSION ?= v1.35.5-accelerator.0.1.0
+SCHEDULER_VERSION ?= v1.35.5-accelerator.0.2.0
 VERSION_LDFLAG := -X k8s.io/component-base/version.gitVersion=$(SCHEDULER_VERSION)
 
-.PHONY: generate fmt fmt-check vet test test-race build image kind-up deploy crd-smoke topology-smoke device-smoke smoke e2e kind-down verify
+.PHONY: generate fmt fmt-check vet test test-race build image kind-up deploy crd-smoke topology-smoke device-smoke topology-aware-smoke smoke e2e kind-down verify
 
 generate:
 	./hack/generate.sh
@@ -51,7 +51,10 @@ topology-smoke:
 device-smoke:
 	./hack/smoke-synthetic-devices.sh
 
-e2e: kind-up deploy crd-smoke topology-smoke device-smoke smoke
+topology-aware-smoke:
+	./hack/smoke-topologyfit.sh
+
+e2e: kind-up deploy crd-smoke topology-smoke device-smoke topology-aware-smoke smoke
 
 kind-down:
 	./hack/kind-down.sh

@@ -3,7 +3,7 @@ set -eu
 
 CLUSTER_NAME="${KIND_CLUSTER_NAME:-accelerator-fabric}"
 IMAGE="${SCHEDULER_IMAGE:-accelerator-fabric-scheduler:dev}"
-SCHEDULER_VERSION="${SCHEDULER_VERSION:-v1.35.5-accelerator.0.1.0}"
+SCHEDULER_VERSION="${SCHEDULER_VERSION:-v1.35.5-accelerator.0.2.0}"
 
 docker build --build-arg SCHEDULER_VERSION="$SCHEDULER_VERSION" -t "$IMAGE" .
 kind load docker-image --name "$CLUSTER_NAME" "$IMAGE"
