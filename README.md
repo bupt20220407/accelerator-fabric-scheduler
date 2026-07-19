@@ -2,7 +2,7 @@
 
 `Accelerator Fabric Scheduler` is an out-of-tree Kubernetes scheduler for topology-aware GPU/NPU placement. It models NUMA locality, PCIe roots, and accelerator fabrics such as NVLink, HCCS, and XGMI.
 
-## Current milestone: W9 DRA gang failover and recovery
+## Current milestone: W10 controller retries and executable alerts
 
 The repository now provides a reproducible policy-to-scheduling path:
 
@@ -36,11 +36,13 @@ The repository now provides a reproducible policy-to-scheduling path:
 - competing equal-priority groups verify that older PodGroup creation time takes precedence even when the newer group's Pods are created first;
 - a three-member heterogeneous PodGroup consumes three independent node-local DRA claims on NVIDIA, Ascend, and AMD workers and verifies CDI identity plus cleanup;
 - a failure harness withdraws one vendor pool, restarts the scheduler while two DRA members wait at Permit, proves no partial commit, and then validates discovery plus workload recovery;
-- digest-pinned promtool validation covers ten discovery, controller, scheduler, Coscheduling, and DRA alert rules with an explicit prototype SLO contract;
+- fake-client reactors inject transient 503 responses into both controllers and prove rate-limited workqueue retry plus eventual convergence;
+- digest-pinned promtool validation covers ten discovery, controller, scheduler, and DRA alert rules with an explicit prototype SLO contract;
+- deterministic promtool time-series tests verify thresholds, `for` durations, labels, severities, and annotations for every alert;
 - three kind workers publish eight synthetic NVIDIA, Ascend, or AMD resources through the kubelet Device Plugin API;
 - end-to-end tests prove both real kubelet Allocate calls and a topology-specific four-card-pass/five-card-reject decision.
 
-The DRA path has an authoritative synthetic claim-to-kubelet identity contract, while the legacy extended-resource/Device Plugin path remains advisory. Gang admission does not turn legacy advisory device IDs into an authoritative kubelet handoff. Pods must still reference generated DRA templates explicitly. Automatic DRA translation intentionally excludes `fabric-connected` and unknown-topology policies. W9 proves one missing-pool and scheduler-restart sequence, but it does not run discovery on physical GPUs, provide scheduler HA, or prove real training-throughput improvement.
+The DRA path has an authoritative synthetic claim-to-kubelet identity contract, while the legacy extended-resource/Device Plugin path remains advisory. Gang admission does not turn legacy advisory device IDs into an authoritative kubelet handoff. Pods must still reference generated DRA templates explicitly. Automatic DRA translation intentionally excludes `fabric-connected` and unknown-topology policies. W10 proves one-shot API retry and deterministic alert behavior, but it does not run discovery on physical GPUs, provide scheduler HA, deliver real pages, or prove training-throughput improvement.
 
 ## Prerequisites
 
@@ -77,7 +79,7 @@ spec:
 
 See `config/samples/high-bandwidth-training-policy.yaml` for a complete policy. Pods without the annotation retain neutral `TopologyFit` behavior.
 
-## Run the W9 end-to-end test
+## Run the W10 end-to-end test
 
 ```bash
 make e2e
@@ -110,7 +112,8 @@ The command creates a one-control-plane/three-worker kind cluster, builds and lo
 - an unannotated W1 compatibility Pod is still bound by the custom scheduler;
 - cleanup restores both AcceleratorTopology and ResourceSlice health to Healthy;
 - promtool accepts all ten SLO/alert expressions from a digest-pinned Prometheus image;
-- the image reports `v1.35.5-accelerator.0.9.0`, preventing a stale `:dev` image from passing.
+- promtool evaluates all ten alerts against exact sustained-failure and missing-series expectations;
+- the image reports `v1.35.5-accelerator.0.10.0`, preventing a stale `:dev` image from passing.
 
 Clean up with `make kind-down`. The default kind image is pinned by digest in `versions.lock.md`.
 
@@ -146,6 +149,8 @@ The checked-in W8 result is in `docs/reports/w8-discovery-dra-gang-20260719.md`.
 
 The checked-in W9 result is in `docs/reports/w9-dra-gang-failover-20260720.md`. It records the missing-pool injection, scheduler restart commitment boundary, recovery behavior, and a failed cleanup assumption that was corrected in the final harness.
 
+The checked-in W10 result is in `docs/reports/w10-retry-alerts-20260720.md`. It records controller API fault injection, exact alert-firing expectations, and the boundary between deterministic rule tests and a live Prometheus/Alertmanager deployment.
+
 ## Repository map
 
 ```text
@@ -178,7 +183,7 @@ docs/testing/                   fault-injection coverage matrix
 hack/                           containerized Go and kind automation
 ```
 
-## W9 acceptance criteria
+## W10 acceptance criteria
 
 - `make verify` and `make e2e` pass from a clean checkout.
 - generated API code and fixture YAML are reproducible.
@@ -219,6 +224,10 @@ hack/                           containerized Go and kind automation
 - a scheduler restart plus PodGroup timeout clears all provisional nominations and preserves all-or-nothing gang behavior.
 - explicitly removing the injected DaemonSet field restores all discovery Agents, the missing topology, and eight DRA devices.
 - the recovered cluster completes the normal three-vendor gang and leaves no PodGroup, claim, or template residue.
+- one injected topology status 503 produces at least two update attempts and eventually writes `Ready=True`.
+- one injected ResourceClaimTemplate create 503 produces at least two create attempts and eventually creates the correct template.
+- all ten alert rules have exact promtool firing tests in addition to parser validation.
+- production Docker builds exclude test-only Go files while `make verify` continues to execute them.
 
 ## Next milestone: physical-hardware validation
 
@@ -226,4 +235,4 @@ The next milestone should run one provider against physical hardware, reconcile 
 
 ## Repository visibility and license
 
-The project is intended to remain private during early implementation. No open-source license is granted by this repository at W9; choose a license deliberately before making it public. Third-party dependency terms are recorded in `THIRD_PARTY_NOTICES.md`.
+The project is intended to remain private during early implementation. No open-source license is granted by this repository at W10; choose a license deliberately before making it public. Third-party dependency terms are recorded in `THIRD_PARTY_NOTICES.md`.

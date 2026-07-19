@@ -93,6 +93,6 @@ if ! grep -q '^accelerator_fabric_discovery_last_success_timestamp_seconds{provi
   exit 1
 fi
 
-echo "scheduler, Coscheduling, controller, discovery, and node-local DRA health/metrics endpoints exposed expected W9 signals"
+echo "scheduler, Coscheduling, controller, discovery, and node-local DRA health/metrics endpoints exposed expected W10 signals"
 cleanup
 trap - EXIT

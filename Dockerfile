@@ -5,7 +5,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY cmd ./cmd
 COPY pkg ./pkg
-ARG SCHEDULER_VERSION=v1.35.5-accelerator.0.9.0
+ARG SCHEDULER_VERSION=v1.35.5-accelerator.0.10.0
 RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath \
     -ldflags="-s -w -X k8s.io/component-base/version.gitVersion=${SCHEDULER_VERSION}" \
     -o /out/accelerator-scheduler ./cmd/scheduler

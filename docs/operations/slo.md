@@ -32,7 +32,7 @@ Zero published devices is critical after five minutes. Diagnose topology Ready/f
 
 ## Validation and rollout
 
-Run `make monitoring-smoke` to validate rule syntax with the digest-pinned Prometheus `v3.5.0` image. Before enabling paging:
+Run `make monitoring-smoke` to validate rule syntax and evaluate exact firing expectations with the digest-pinned Prometheus `v3.5.0` image. Before enabling paging:
 
 1. Scrape scheduler, controller, every discovery Agent, and every DRA driver with stable `cluster`, `instance`, and `node` labels.
 2. Confirm the scheduler's `queue`, `extension_point`, and `plugin` label values against the deployed metrics endpoint; do not assume `scheduler_pending_pods` has a profile label or sampled duration histograms always have a Permit series.

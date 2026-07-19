@@ -10,7 +10,7 @@
 | kubectl | `v1.36.2` client | One-minor skew from the v1.35.5 cluster |
 | scheduler-plugins | `v0.35.4-devel` | Coscheduling beta plugin; Kubernetes dependencies are unified to v1.35.5/v0.35.5 by this module's replace block |
 | CRD API | `scheduling.bupt.dev/v1alpha1` | Experimental API; breaking changes are still allowed |
-| Custom scheduler binary | `v1.35.5-accelerator.0.9.0` | W9 DRA gang failover and discovery recovery identity |
+| Custom scheduler binary | `v1.35.5-accelerator.0.10.0` | W10 controller retry and executable alert behavior identity |
 | Kubernetes code-generator | `v0.35.5` | Matches the API/client-go patch baseline |
 | Device Plugin API | `v1beta1` from `k8s.io/kubelet v0.35.5` | Current kubelet registration and Allocate contract |
 | DRA API | `resource.k8s.io/v1` and kubelet DRA `v1` | Stable structured device allocation and node Prepare/Unprepare contract |

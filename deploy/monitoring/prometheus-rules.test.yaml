@@ -1,0 +1,104 @@
+rule_files:
+  - prometheus-rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - name: sustained accelerator failures trigger operational alerts
+    interval: 1m
+    input_series:
+      - series: 'accelerator_fabric_discovery_last_success_timestamp_seconds{instance="node-a",provider="fixture"}'
+        values: '0+0x20'
+      - series: 'accelerator_fabric_discovery_operations_total{instance="node-a",provider="fixture",result="error"}'
+        values: '0+10x20'
+      - series: 'accelerator_fabric_discovery_operations_total{instance="node-a",provider="fixture",result="success"}'
+        values: '0+0x20'
+      - series: 'accelerator_fabric_controller_reconciles_total{controller="topology",result="error"}'
+        values: '0+10x20'
+      - series: 'accelerator_fabric_controller_reconciles_total{controller="topology",result="success"}'
+        values: '0+0x20'
+      - series: 'accelerator_fabric_scheduler_topologyfit_operations_total{operation="filter",result="error",topology_mode="fabric-clique"}'
+        values: '0+1x20'
+      - series: 'scheduler_pending_pods{queue="unschedulable"}'
+        values: '1+0x20'
+      - series: 'accelerator_fabric_dra_published_devices{instance="node-a"}'
+        values: '0+0x20'
+      - series: 'accelerator_fabric_dra_operations_total{instance="node-a",operation="prepare",result="error"}'
+        values: '0+10x20'
+      - series: 'accelerator_fabric_dra_operations_total{instance="node-a",operation="prepare",result="success"}'
+        values: '0+0x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: AcceleratorDiscoveryStale
+        exp_alerts:
+          - exp_labels: {instance: node-a, provider: fixture, severity: critical}
+            exp_annotations:
+              summary: Accelerator topology discovery has been stale for more than two minutes
+              runbook: docs/operations/slo.md#discovery
+      - eval_time: 16m
+        alertname: AcceleratorDiscoveryErrors
+        exp_alerts:
+          - exp_labels: {instance: node-a, provider: fixture, severity: warning}
+            exp_annotations:
+              summary: More than five percent of accelerator discovery operations are failing
+              runbook: docs/operations/slo.md#discovery
+      - eval_time: 16m
+        alertname: AcceleratorControllerReconcileErrors
+        exp_alerts:
+          - exp_labels: {controller: topology, severity: warning}
+            exp_annotations:
+              summary: Accelerator controller reconcile error ratio exceeds five percent
+              runbook: docs/operations/slo.md#control-plane
+      - eval_time: 16m
+        alertname: AcceleratorTopologyFitErrors
+        exp_alerts:
+          - exp_labels: {operation: filter, severity: warning}
+            exp_annotations:
+              summary: TopologyFit is returning internal errors
+              runbook: docs/operations/slo.md#scheduling
+      - eval_time: 16m
+        alertname: AcceleratorSchedulerPodsUnschedulable
+        exp_alerts:
+          - exp_labels: {queue: unschedulable, severity: warning}
+            exp_annotations:
+              summary: Accelerator scheduler has retained unschedulable Pods for fifteen minutes
+              runbook: docs/operations/slo.md#scheduling
+      - eval_time: 16m
+        alertname: AcceleratorDRAPublishedDevicesZero
+        exp_alerts:
+          - exp_labels: {instance: node-a, severity: critical}
+            exp_annotations:
+              summary: A node-local accelerator DRA driver is publishing zero devices
+              runbook: docs/operations/slo.md#dra-data-plane
+      - eval_time: 16m
+        alertname: AcceleratorDRAOperationErrors
+        exp_alerts:
+          - exp_labels: {instance: node-a, operation: prepare, severity: warning}
+            exp_annotations:
+              summary: A DRA operation error ratio exceeds one percent
+              runbook: docs/operations/slo.md#dra-data-plane
+
+  - name: absent component series trigger missing-metrics alerts
+    interval: 1m
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: AcceleratorDiscoveryMetricsMissing
+        exp_alerts:
+          - exp_labels: {severity: critical}
+            exp_annotations:
+              summary: No accelerator discovery success metric is available
+              runbook: docs/operations/slo.md#discovery
+      - eval_time: 11m
+        alertname: AcceleratorSchedulerMetricsMissing
+        exp_alerts:
+          - exp_labels: {severity: critical}
+            exp_annotations:
+              summary: No accelerator scheduler metrics are available
+              runbook: docs/operations/slo.md#scheduling
+      - eval_time: 11m
+        alertname: AcceleratorDRAPublishedDevicesMissing
+        exp_alerts:
+          - exp_labels: {severity: critical}
+            exp_annotations:
+              summary: No node-local accelerator DRA inventory metric is available
+              runbook: docs/operations/slo.md#dra-data-plane

@@ -2,11 +2,15 @@ package topology
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiMeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	k8stesting "k8s.io/client-go/testing"
 
 	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
 	fakeclient "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/fake"
@@ -55,6 +59,36 @@ func TestControllerMarksInvalidGraphNotReady(t *testing.T) {
 		}
 		condition := apiMeta.FindStatusCondition(updated.Status.Conditions, "Ready")
 		return condition != nil && condition.Status == metav1.ConditionFalse && condition.Reason == "InvalidTopology"
+	})
+}
+
+func TestControllerRetriesTransientStatusUpdate(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	object := validObject()
+	client := fakeclient.NewSimpleClientset(object)
+	var attempts atomic.Int32
+	client.Fake.PrependReactor("update", "acceleratortopologies", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		if action.GetSubresource() != "status" {
+			return false, nil, nil
+		}
+		if attempts.Add(1) == 1 {
+			return true, nil, apierrors.NewServiceUnavailable("injected status update failure")
+		}
+		return false, nil, nil
+	})
+	factory := informers.NewSharedInformerFactory(client, 0)
+	controller := New(client, factory.Scheduling().V1alpha1().AcceleratorTopologies())
+	factory.Start(ctx.Done())
+	go func() { _ = controller.Run(ctx, 1) }()
+
+	eventually(t, func() bool {
+		updated, err := client.SchedulingV1alpha1().AcceleratorTopologies().Get(ctx, object.Name, metav1.GetOptions{})
+		if err != nil {
+			return false
+		}
+		condition := apiMeta.FindStatusCondition(updated.Status.Conditions, "Ready")
+		return attempts.Load() >= 2 && condition != nil && condition.Status == metav1.ConditionTrue
 	})
 }
 
