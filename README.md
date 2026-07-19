@@ -2,7 +2,7 @@
 
 `Accelerator Fabric Scheduler` is an out-of-tree Kubernetes scheduler for topology-aware GPU/NPU placement. It models NUMA locality, PCIe roots, and accelerator fabrics such as NVLink, HCCS, and XGMI.
 
-## Current milestone: W5 project API to DRA reconciliation
+## Current milestone: W6 observability and repeatable experiments
 
 The repository now provides a reproducible policy-to-scheduling path:
 
@@ -24,10 +24,13 @@ The repository now provides a reproducible policy-to-scheduling path:
 - topology links are reduced into conservative per-device fabric bandwidth and hop attributes;
 - optional `AcceleratorPlacementPolicy.spec.dra.deviceCount` creates a same-name, owner-managed ResourceClaimTemplate;
 - policy vendor, product, memory, health, locality, bandwidth, and hop constraints become native DRA CEL/matchAttribute rules;
+- low-cardinality Prometheus metrics cover TopologyFit operations, controller reconciliations, and DRA publish/prepare/unprepare paths;
+- readiness probes and directly testable metrics endpoints cover the scheduler, topology controller, and every node-local DRA driver;
+- repeatable microbenchmarks, kind allocation-latency samples, and multi-claim fragmentation rounds produce machine-readable evidence;
 - three kind workers publish eight synthetic NVIDIA, Ascend, or AMD resources through the kubelet Device Plugin API;
 - end-to-end tests prove both real kubelet Allocate calls and a topology-specific four-card-pass/five-card-reject decision.
 
-The DRA path has an authoritative synthetic claim-to-kubelet identity contract, while the legacy extended-resource/Device Plugin path remains advisory. W5 removes duplicated device and selector configuration for supported modes, but Pods must still reference the generated template explicitly. Automatic DRA translation intentionally excludes `fabric-connected` and unknown-topology policies. Neither path discovers physical accelerators, implements gang scheduling, or proves a real training-throughput improvement.
+The DRA path has an authoritative synthetic claim-to-kubelet identity contract, while the legacy extended-resource/Device Plugin path remains advisory. W5 removed duplicated device and selector configuration for supported modes; W6 adds evidence and repeatability around that path. Pods must still reference the generated template explicitly. Automatic DRA translation intentionally excludes `fabric-connected` and unknown-topology policies. Neither path discovers physical accelerators, implements gang scheduling, or proves a real training-throughput improvement.
 
 ## Prerequisites
 
@@ -64,7 +67,7 @@ spec:
 
 See `config/samples/high-bandwidth-training-policy.yaml` for a complete policy. Pods without the annotation retain neutral `TopologyFit` behavior.
 
-## Run the W5 end-to-end test
+## Run the W6 end-to-end test
 
 ```bash
 make e2e
@@ -84,11 +87,31 @@ The command creates a one-control-plane/three-worker kind cluster, builds and lo
 - a four-device NVLink clique workload completes;
 - a five-device request remains unbound because `TopologyFit` rejects it, even though the NVIDIA node has scalar capacity for eight devices;
 - scheduler logs prove Reserve, PreBind verification, and PostBind release executed for the successful topology-aware Pod;
+- two repeated fragmentation rounds pack four concurrent two-device claims into eight unique, clique-local devices and leave an overflow claim unallocated;
+- scheduler, controller, and DRA health/Prometheus endpoints expose expected operation and state signals;
 - an unannotated W1 compatibility Pod is still bound by the custom scheduler;
 - cleanup restores both AcceleratorTopology and ResourceSlice health to Healthy;
-- the image reports `v1.35.5-accelerator.0.5.0`, preventing a stale `:dev` image from passing.
+- the image reports `v1.35.5-accelerator.0.6.0`, preventing a stale `:dev` image from passing.
 
 Clean up with `make kind-down`. The default kind image is pinned by digest in `versions.lock.md`.
+
+## Run performance and fragmentation experiments
+
+Run stable code-path microbenchmarks with:
+
+```bash
+make benchmark
+```
+
+Measure sequential Pod creation through DRA allocation, NodePrepare, CDI injection, and workload start in the current kind environment with:
+
+```bash
+BENCH_ITERATIONS=10 REPORT_PATH=evidence/allocation-latency.csv make benchmark-allocation
+```
+
+The command prints raw CSV plus min/p50/p95/max. It deliberately has no pass/fail latency threshold because host load and kind control-plane timing vary. Run repeated concurrent packing independently with `FRAGMENTATION_ROUNDS=10 make fragmentation-smoke`. These results characterize the fixed synthetic fixture; they are not GPU/NPU kernel, collective, or training-throughput benchmarks.
+
+The checked-in W6 reference run is in `docs/reports/w6-kind-baseline-20260719.md` and retains all raw kind samples.
 
 ## Repository map
 
@@ -105,16 +128,20 @@ pkg/generated/                  generated clients, listers, and informers
 pkg/topology/                   graph snapshots and concurrent cache
 pkg/deviceplugin/               synthetic Device Plugin service
 pkg/dra/                        DRA resources, persistent Prepare state, and CDI handoff
+pkg/observability/              low-cardinality component metrics and HTTP serving
 pkg/fixtures/                   deterministic three-vendor topology models
 config/crd/                     v1alpha1 API schemas
 config/fixtures/                generated three-worker topologies
 config/smoke/                   scheduler, Allocate, and topology acceptance Pods
+config/experiments/             repeatable allocation and fragmentation workloads
 deploy/base/                    scheduler, controller, Device Plugins, and RBAC
 docs/adr/                       architecture decisions and scope boundaries
+docs/reports/                   environment-specific reproducible baselines
+docs/testing/                   fault-injection coverage matrix
 hack/                           containerized Go and kind automation
 ```
 
-## W5 acceptance criteria
+## W6 acceptance criteria
 
 - `make verify` and `make e2e` pass from a clean checkout.
 - generated API code and fixture YAML are reproducible.
@@ -127,6 +154,11 @@ hack/                           containerized Go and kind automation
 - ResourceSlices are driven by Ready AcceleratorTopology objects rather than direct fixture reads.
 - a policy-created template carries the expected CEL selectors and matchAttribute constraint.
 - topology health changes affect native allocation and are restored after fault injection.
+- scheduler, controller, and DRA metrics expose bounded labels, operation counts/latencies, and current state gauges.
+- all three component health/metrics endpoints are reached and semantically checked in kind.
+- repeated four-claim experiments allocate eight unique devices inside valid cliques and reject an overflow claim.
+- microbenchmarks report allocation-path time and allocations; the kind harness exports raw per-sample CSV.
+- the fault matrix maps each failure to expected behavior, automated evidence, and remaining production work.
 - scheduler informers start and synchronize under read-only CRD RBAC.
 - the topology-specific positive and negative scheduling cases pass.
 - a real scheduler cycle emits Reserve, PreBind, and PostBind lifecycle evidence.
@@ -134,10 +166,10 @@ hack/                           containerized Go and kind automation
 - all Kubernetes modules remain on the locked v1.35.5/v0.35.5 baseline.
 - documentation does not imply exact device reservation or physical accelerator testing.
 
-## Next milestone: W6
+## Next milestone: W7
 
-W6 should add scheduler/controller/driver Prometheus metrics, allocation-latency benchmarks, repeated multi-Pod fragmentation experiments, and a documented fault matrix for stale topology, unhealthy links, driver downtime, claim conflicts, and API errors. Gang scheduling remains a separate later milestone.
+W7 should evaluate gang scheduling through a version-matched scheduler-plugins Coscheduling integration, define PodGroup admission and rollback semantics, and measure queue fairness under competing distributed jobs. It must remain separate from topology and DRA correctness so a gang failure cannot leak device reservations.
 
 ## Repository visibility and license
 
-The project is intended to remain private during early implementation. No open-source license is granted by this repository at W5; choose a license deliberately before making it public.
+The project is intended to remain private during early implementation. No open-source license is granted by this repository at W6; choose a license deliberately before making it public.

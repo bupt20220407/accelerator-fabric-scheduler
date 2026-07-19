@@ -59,6 +59,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/topology-controller"]
           args: ["--workers=1"]
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 2
+            periodSeconds: 5
           resources:
             requests: {cpu: 20m, memory: 32Mi}
             limits: {cpu: 200m, memory: 128Mi}

@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: w6-fragmentation-overflow
+  namespace: default
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  resourceClaims:
+    - name: accelerators
+      resourceClaimTemplateName: w6-fragmentation
+  containers:
+    - name: workload
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-dra-workload"]
+      args: ["--expected=2"]
+      resources:
+        claims: [{name: accelerators}]
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true

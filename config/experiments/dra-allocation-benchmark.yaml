@@ -1,0 +1,46 @@
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorPlacementPolicy
+metadata:
+  name: w6-allocation-benchmark
+  namespace: default
+spec:
+  vendor: nvidia
+  products: [H100-SXM]
+  minimumMemoryMiB: 80000
+  topologyMode: fabric-clique
+  minimumLinkBandwidthGBps: 300
+  maxFabricHops: 1
+  allowUnknownTopology: false
+  weights:
+    locality: 35
+    fabric: 35
+    fragmentation: 20
+    headroom: 10
+  failurePolicy: FailClosed
+  dra:
+    deviceCount: 4
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: w6-allocation-benchmark
+  namespace: default
+spec:
+  schedulerName: accelerator-scheduler
+  restartPolicy: Never
+  resourceClaims:
+    - name: accelerators
+      resourceClaimTemplateName: w6-allocation-benchmark
+  containers:
+    - name: workload
+      image: accelerator-fabric-scheduler:dev
+      imagePullPolicy: IfNotPresent
+      command: ["/synthetic-dra-workload"]
+      args: ["--expected=4", "--hold=5s"]
+      resources:
+        claims: [{name: accelerators}]
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities: {drop: ["ALL"]}
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true

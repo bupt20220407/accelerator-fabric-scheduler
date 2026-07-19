@@ -10,12 +10,15 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	resourceapi "k8s.io/api/resource/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/dynamic-resource-allocation/kubeletplugin"
 	"k8s.io/klog/v2"
+
+	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
 )
 
 const stateVersion = 1
@@ -81,12 +84,19 @@ func (d *Driver) PrepareResourceClaims(
 ) (map[types.UID]kubeletplugin.PrepareResult, error) {
 	results := make(map[types.UID]kubeletplugin.PrepareResult, len(claims))
 	for _, claim := range claims {
+		started := time.Now()
 		devices, err := d.prepareClaim(claim)
 		results[claim.UID] = kubeletplugin.PrepareResult{Devices: devices, Err: err}
+		result := observability.ResultSuccess
+		if err != nil {
+			result = observability.ResultError
+		}
+		observability.ObserveDRAOperation("prepare", result, time.Since(started))
 		if err == nil {
 			klog.FromContext(ctx).Info("prepared authoritative DRA allocation", "claim", klog.KObj(claim), "claimUID", claim.UID, "devices", devices)
 		}
 	}
+	observability.SetDRAPreparedClaims(d.PreparedCount())
 	return results, nil
 }
 
@@ -96,12 +106,19 @@ func (d *Driver) UnprepareResourceClaims(
 ) (map[types.UID]error, error) {
 	results := make(map[types.UID]error, len(claims))
 	for _, claim := range claims {
+		started := time.Now()
 		err := d.unprepareClaim(claim.UID)
 		results[claim.UID] = err
+		result := observability.ResultSuccess
+		if err != nil {
+			result = observability.ResultError
+		}
+		observability.ObserveDRAOperation("unprepare", result, time.Since(started))
 		if err == nil {
 			klog.FromContext(ctx).Info("unprepared authoritative DRA allocation", "claim", claim.Namespace+"/"+claim.Name, "claimUID", claim.UID)
 		}
 	}
+	observability.SetDRAPreparedClaims(d.PreparedCount())
 	return results, nil
 }
 

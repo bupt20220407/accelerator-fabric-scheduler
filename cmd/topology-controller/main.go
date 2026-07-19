@@ -17,12 +17,15 @@ import (
 	topologycontroller "github.com/bupt/accelerator-fabric-scheduler/pkg/controller/topology"
 	clientset "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
 	informers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
+	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
 )
 
 func main() {
 	kubeconfig := flag.String("kubeconfig", "", "optional path to a kubeconfig; defaults to in-cluster config")
 	workers := flag.Int("workers", 1, "number of topology status workers")
+	metricsAddress := flag.String("metrics-bind-address", ":8080", "address for the metrics and health server; empty disables it")
 	flag.Parse()
+	observability.RegisterControllerMetrics()
 
 	config, err := buildConfig(*kubeconfig)
 	if err != nil {
@@ -43,9 +46,10 @@ func main() {
 	topologyController := topologycontroller.New(client, factory.Scheduling().V1alpha1().AcceleratorTopologies())
 	policyController := policycontroller.New(kubeClient, factory.Scheduling().V1alpha1().AcceleratorPlacementPolicies())
 	factory.Start(ctx.Done())
-	errCh := make(chan error, 2)
+	errCh := make(chan error, 3)
 	go func() { errCh <- topologyController.Run(ctx, *workers) }()
 	go func() { errCh <- policyController.Run(ctx, *workers) }()
+	go func() { errCh <- observability.Serve(ctx, *metricsAddress) }()
 	if err := <-errCh; err != nil {
 		log.Fatal(err)
 	}

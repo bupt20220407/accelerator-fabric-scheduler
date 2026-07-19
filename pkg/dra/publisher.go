@@ -12,6 +12,7 @@ import (
 
 	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
 	schedulinginformers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
+	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
 )
 
 const topologyTTL = 2 * time.Minute
@@ -35,6 +36,18 @@ func ObserveTopologies(
 	if onError == nil {
 		onError = func(error) {}
 	}
+	publishObserved := func(resources resourceslice.DriverResources) error {
+		started := time.Now()
+		err := publish(ctx, resources)
+		result := observability.ResultSuccess
+		if err != nil {
+			result = observability.ResultError
+		} else {
+			observability.SetDRAPublishedDevices(publishedDeviceCount(resources))
+		}
+		observability.ObserveDRAOperation("publish", result, time.Since(started))
+		return err
+	}
 	publishObject := func(object *schedulingv1alpha1.AcceleratorTopology) {
 		if object.Spec.NodeName != nodeName {
 			return
@@ -48,7 +61,7 @@ func ObserveTopologies(
 			}
 			resources = converted
 		}
-		if err := publish(ctx, resources); err != nil {
+		if err := publishObserved(resources); err != nil {
 			onError(fmt.Errorf("publish topology %q: %w", object.Name, err))
 		}
 	}
@@ -62,7 +75,7 @@ func ObserveTopologies(
 			oldTopology, oldOK := oldObject.(*schedulingv1alpha1.AcceleratorTopology)
 			newTopology, newOK := newObject.(*schedulingv1alpha1.AcceleratorTopology)
 			if oldOK && oldTopology.Spec.NodeName == nodeName && (!newOK || newTopology.Spec.NodeName != nodeName) {
-				if err := publish(ctx, EmptyResources()); err != nil {
+				if err := publishObserved(EmptyResources()); err != nil {
 					onError(err)
 				}
 				return
@@ -78,12 +91,22 @@ func ObserveTopologies(
 				return
 			}
 			if topologyObject.Spec.NodeName == nodeName {
-				if err := publish(ctx, EmptyResources()); err != nil {
+				if err := publishObserved(EmptyResources()); err != nil {
 					onError(err)
 				}
 			}
 		},
 	})
+}
+
+func publishedDeviceCount(resources resourceslice.DriverResources) int {
+	count := 0
+	for _, pool := range resources.Pools {
+		for _, slice := range pool.Slices {
+			count += len(slice.Devices)
+		}
+	}
+	return count
 }
 
 func topologyReady(object *schedulingv1alpha1.AcceleratorTopology, now time.Time) bool {

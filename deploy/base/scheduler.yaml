@@ -17,6 +17,8 @@ rules:
   - apiGroups: ["scheduling.bupt.dev"]
     resources: ["acceleratortopologies", "acceleratorplacementpolicies"]
     verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -117,10 +119,21 @@ spec:
         - name: scheduler
           image: accelerator-fabric-scheduler:dev
           imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 10259
+              protocol: TCP
           args:
             - --config=/etc/accelerator-scheduler/scheduler-config.yaml
             - --cert-dir=/tmp/certs
             - --v=2
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /healthz
+              port: metrics
+            initialDelaySeconds: 2
+            periodSeconds: 5
           resources:
             requests:
               cpu: 100m

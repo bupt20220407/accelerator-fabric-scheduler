@@ -16,6 +16,7 @@ import (
 
 	schedulinginformers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
 	schedulinglisters "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/listers/scheduling/v1alpha1"
+	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
 )
 
 type Controller struct {
@@ -66,11 +67,14 @@ func (c *Controller) processNext(ctx context.Context) bool {
 		return false
 	}
 	defer c.queue.Done(objectName)
+	started := time.Now()
 	if err := c.sync(ctx, objectName); err != nil {
+		observability.ObserveControllerReconcile("policy", observability.ResultError, time.Since(started))
 		utilruntime.HandleErrorWithContext(ctx, err, "sync accelerator placement policy", "namespace", objectName.Namespace, "name", objectName.Name)
 		c.queue.AddRateLimited(objectName)
 		return true
 	}
+	observability.ObserveControllerReconcile("policy", observability.ResultSuccess, time.Since(started))
 	c.queue.Forget(objectName)
 	return true
 }

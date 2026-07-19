@@ -16,6 +16,7 @@ import (
 	clientset "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
 	informers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
 	listers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/listers/scheduling/v1alpha1"
+	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
 	topologycache "github.com/bupt/accelerator-fabric-scheduler/pkg/topology/cache"
 )
 
@@ -165,11 +166,17 @@ func (p *Plugin) Filter(
 	state framework.CycleState,
 	_ *v1.Pod,
 	nodeInfo framework.NodeInfo,
-) *framework.Status {
+) (resultStatus *framework.Status) {
+	started := time.Now()
+	topologyMode := ""
+	defer func() {
+		observability.ObserveSchedulerOperation("filter", metricResult(resultStatus), topologyMode, time.Since(started))
+	}()
 	data, status := readCycleData(state)
 	if !status.IsSuccess() || !data.active {
 		return status
 	}
+	topologyMode = string(data.policy.TopologyMode)
 	result := p.evaluate(data, nodeInfo)
 	if result.feasible {
 		return nil
@@ -227,11 +234,18 @@ func (p *Plugin) Score(
 
 func (p *Plugin) ScoreExtensions() framework.ScoreExtensions { return nil }
 
-func (p *Plugin) Reserve(_ context.Context, state framework.CycleState, pod *v1.Pod, nodeName string) *framework.Status {
+func (p *Plugin) Reserve(_ context.Context, state framework.CycleState, pod *v1.Pod, nodeName string) (resultStatus *framework.Status) {
+	started := time.Now()
+	topologyMode := ""
+	defer func() {
+		observability.ObserveSchedulerOperation("reserve", metricResult(resultStatus), topologyMode, time.Since(started))
+		observability.SetSchedulerActiveReservations(p.ledger.Len())
+	}()
 	data, status := readCycleData(state)
 	if !status.IsSuccess() || !data.active {
 		return status
 	}
+	topologyMode = string(data.policy.TopologyMode)
 	cached := p.store.Get(nodeName, p.now(), p.cacheTTL)
 	if cached.Availability != topologycache.AvailabilityReady {
 		if data.policy.FailurePolicy == schedulingv1alpha1.FailurePolicyBestEffort {
@@ -252,10 +266,18 @@ func (p *Plugin) Reserve(_ context.Context, state framework.CycleState, pod *v1.
 }
 
 func (p *Plugin) Unreserve(_ context.Context, state framework.CycleState, pod *v1.Pod, nodeName string) {
+	started := time.Now()
+	topologyMode, result := "", observability.ResultSuccess
+	defer func() {
+		observability.ObserveSchedulerOperation("unreserve", result, topologyMode, time.Since(started))
+		observability.SetSchedulerActiveReservations(p.ledger.Len())
+	}()
 	data, status := readCycleData(state)
 	if !status.IsSuccess() || !data.active {
+		result = metricResult(status)
 		return
 	}
+	topologyMode = string(data.policy.TopologyMode)
 	p.ledger.Release(data.podKey)
 	klog.InfoS("TopologyFit released advisory device combination", "pod", klog.KObj(pod), "podUID", podKey(pod), "node", nodeName, "outcome", "unreserve")
 }
@@ -264,11 +286,17 @@ func (p *Plugin) PreBindPreFlight(context.Context, framework.CycleState, *v1.Pod
 	return nil
 }
 
-func (p *Plugin) PreBind(_ context.Context, state framework.CycleState, pod *v1.Pod, nodeName string) *framework.Status {
+func (p *Plugin) PreBind(_ context.Context, state framework.CycleState, pod *v1.Pod, nodeName string) (resultStatus *framework.Status) {
+	started := time.Now()
+	topologyMode := ""
+	defer func() {
+		observability.ObserveSchedulerOperation("prebind", metricResult(resultStatus), topologyMode, time.Since(started))
+	}()
 	data, status := readCycleData(state)
 	if !status.IsSuccess() || !data.active {
 		return status
 	}
+	topologyMode = string(data.policy.TopologyMode)
 	reserved, found := p.ledger.Get(data.podKey)
 	if !found {
 		cached := p.store.Get(nodeName, p.now(), p.cacheTTL)
@@ -285,12 +313,30 @@ func (p *Plugin) PreBind(_ context.Context, state framework.CycleState, pod *v1.
 }
 
 func (p *Plugin) PostBind(_ context.Context, state framework.CycleState, pod *v1.Pod, nodeName string) {
+	started := time.Now()
+	topologyMode, result := "", observability.ResultSuccess
+	defer func() {
+		observability.ObserveSchedulerOperation("postbind", result, topologyMode, time.Since(started))
+		observability.SetSchedulerActiveReservations(p.ledger.Len())
+	}()
 	data, status := readCycleData(state)
 	if !status.IsSuccess() || !data.active {
+		result = metricResult(status)
 		return
 	}
+	topologyMode = string(data.policy.TopologyMode)
 	p.ledger.Release(data.podKey)
 	klog.InfoS("TopologyFit released advisory device combination", "pod", klog.KObj(pod), "podUID", podKey(pod), "node", nodeName, "outcome", "bound")
+}
+
+func metricResult(status *framework.Status) string {
+	if status == nil || status.IsSuccess() {
+		return observability.ResultSuccess
+	}
+	if status.Code() == framework.Error {
+		return observability.ResultError
+	}
+	return observability.ResultReject
 }
 
 func readCycleData(state framework.CycleState) (*cycleData, *framework.Status) {

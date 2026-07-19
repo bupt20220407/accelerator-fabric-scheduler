@@ -20,13 +20,16 @@ import (
 	"github.com/bupt/accelerator-fabric-scheduler/pkg/dra"
 	schedulingclient "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
 	schedulinginformers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
+	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
 )
 
 func main() {
 	nodeName := flag.String("node-name", os.Getenv("NODE_NAME"), "node where this DRA plugin runs")
 	stateRoot := flag.String("state-root", filepath.Join(kubeletplugin.KubeletPluginsDir, dra.DriverName), "persistent plugin state directory")
 	cdiDir := flag.String("cdi-dir", "/var/run/cdi", "CDI specification directory shared with the container runtime")
+	metricsAddress := flag.String("metrics-bind-address", ":8080", "address for the metrics and health server; empty disables it")
 	flag.Parse()
+	observability.RegisterDRAMetrics()
 	if *nodeName == "" {
 		log.Fatal("node-name is required")
 	}
@@ -48,6 +51,7 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Printf("recovered %d prepared DRA claims on node %s", driver.PreparedCount(), *nodeName)
+	observability.SetDRAPreparedClaims(driver.PreparedCount())
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
@@ -73,5 +77,13 @@ func main() {
 	if !toolscache.WaitForCacheSync(ctx.Done(), topologyInformer.Informer().HasSynced) {
 		log.Fatal("wait for topology informer cache sync")
 	}
-	<-ctx.Done()
+	errCh := make(chan error, 1)
+	go func() { errCh <- observability.Serve(ctx, *metricsAddress) }()
+	select {
+	case <-ctx.Done():
+	case err := <-errCh:
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
