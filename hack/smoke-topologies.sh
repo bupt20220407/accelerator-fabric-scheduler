@@ -17,4 +17,13 @@ for node in accelerator-fabric-worker accelerator-fabric-worker2 accelerator-fab
     exit 1
   fi
   echo "$node topology is Ready with heartbeat $heartbeat"
+  manager="$(kubectl get acceleratortopology "$node" -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}')"
+  provider="$(kubectl get acceleratortopology "$node" -o jsonpath='{.metadata.labels.scheduling\.bupt\.dev/provider}')"
+  discovered="$(kubectl get acceleratortopology "$node" -o jsonpath='{.metadata.annotations.scheduling\.bupt\.dev/discovered-at}')"
+  if [ "$manager" != "accelerator-topology-discovery" ] || [ "$provider" != "fixture" ] || [ -z "$discovered" ]; then
+    echo "$node was not published by the fixture discovery Agent" >&2
+    exit 1
+  fi
 done
+
+echo "three node-local discovery Agents own and refresh the fixture topologies"

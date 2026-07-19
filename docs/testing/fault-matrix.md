@@ -1,4 +1,4 @@
-# W7 fault matrix
+# W8 fault matrix
 
 | Fault | Injection | Expected behavior | Automated evidence | Remaining production work |
 |---|---|---|---|---|
@@ -10,9 +10,13 @@
 | Claim/device conflict | Prepare a second claim for an owned device | Driver rejects the second owner without corrupting persisted state | `pkg/dra/driver_test.go` | API-level forced allocation conflict and tenant-facing event contract |
 | Resource API error | Return create/update/status errors from the Kubernetes API | Controller returns an error and its rate-limited queue retries | retry path is implemented; direct fault injection is not yet automated | Fake-client reactor coverage, API-server outage, throttling, and retry/alert SLO tests |
 | Full two-clique occupancy | Run four concurrent two-device claims, then a fifth | Four claims use eight unique clique-local devices; overflow remains unallocated | `hack/smoke-fragmentation.sh` | Larger heterogeneous pools, cancellation races, and long-running churn |
-| Metrics endpoint loss | Stop or isolate a component Pod | Scrape fails while Kubernetes readiness reflects process availability | `hack/smoke-metrics.sh` validates healthy endpoints | Prometheus alert rules, NetworkPolicy, TLS/auth for non-scheduler endpoints |
+| Metrics endpoint loss | Stop or isolate a component Pod | Scrape fails while Kubernetes readiness reflects process availability | `hack/smoke-metrics.sh` validates all component endpoints; missing-series rules pass promtool | NetworkPolicy, TLS/auth for non-scheduler endpoints, and an alert-firing integration test |
 | Incomplete gang | Submit a two-member group with feasible 4-device and infeasible 5-device members | Feasible member waits, times out, and releases its TopologyFit reservation; neither member binds | `hack/smoke-gang.sh` | Larger groups, controller deletion races, scheduler failover, and tenant events |
 | Competing equal-priority gangs | Queue newer-group Pods before older-group Pods while the scheduler is paused | Older PodGroup receives all eight devices first; newer group starts only after release | `hack/smoke-gang-fairness.sh` | Starvation bounds, priorities, quotas, preemption, and sustained multi-tenant load |
-| Scheduler restart during Permit | Restart the scheduler while members wait | In-memory assumed state is discarded and Pods are retried from API state | not automated in W7 | Add restart injection and prove DRA/TopologyFit cleanup across scheduler failover |
+| Scheduler restart during Permit | Restart the scheduler while members wait | In-memory assumed state is discarded and Pods are retried from API state | not automated in W8 | Add restart injection and prove DRA/TopologyFit cleanup across scheduler failover |
+| Discovery provider failure | Provider command/API returns an error | Agent preserves the last published object, records an error, and stops advancing last-success time | provider and metric unit paths plus stale/error alert syntax | Inject a failing provider in kind and verify alert firing/end-to-end recovery |
+| Discovery ownership conflict | An unmanaged or other-provider object already uses the node name | Agent refuses silent takeover and reports repeated discovery failure | `pkg/discovery/agent_test.go` | Kubernetes Event, condition, and operator-guided ownership transfer workflow |
+| Partial heterogeneous gang | One of three vendor pools is unavailable | Coscheduling must not admit a partial distributed workload; native claims remain node-local | successful three-vendor path is automated; failure path is not yet injected | Remove one ResourceSlice, verify Permit/claim cleanup, and cover scheduler restart races |
+| SLO rule drift | Invalid PromQL or rule YAML is committed | CI fails before deployment | digest-pinned `promtool check rules` in `make monitoring-smoke` | Evaluate rules against recorded and live time series on every component upgrade |
 
-The matrix records prototype evidence, not a production reliability claim. Items in the final column remain explicitly out of scope for W7.
+The matrix records prototype evidence, not a production reliability claim. Items in the final column remain explicitly out of scope for W8.

@@ -1,0 +1,38 @@
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorPlacementPolicy
+metadata:
+  name: w8-dra-nvidia
+  namespace: default
+spec:
+  vendor: nvidia
+  topologyMode: best-effort
+  allowUnknownTopology: false
+  weights: {locality: 25, fabric: 25, fragmentation: 25, headroom: 25}
+  failurePolicy: FailClosed
+  dra: {deviceCount: 1}
+---
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorPlacementPolicy
+metadata:
+  name: w8-dra-huawei
+  namespace: default
+spec:
+  vendor: huawei
+  topologyMode: best-effort
+  allowUnknownTopology: false
+  weights: {locality: 25, fabric: 25, fragmentation: 25, headroom: 25}
+  failurePolicy: FailClosed
+  dra: {deviceCount: 1}
+---
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorPlacementPolicy
+metadata:
+  name: w8-dra-amd
+  namespace: default
+spec:
+  vendor: amd
+  topologyMode: best-effort
+  allowUnknownTopology: false
+  weights: {locality: 25, fabric: 25, fragmentation: 25, headroom: 25}
+  failurePolicy: FailClosed
+  dra: {deviceCount: 1}

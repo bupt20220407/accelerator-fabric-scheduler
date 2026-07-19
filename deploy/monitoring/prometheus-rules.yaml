@@ -1,0 +1,82 @@
+groups:
+  - name: accelerator-fabric.discovery
+    interval: 30s
+    rules:
+      - alert: AcceleratorDiscoveryMetricsMissing
+        expr: absent(accelerator_fabric_discovery_last_success_timestamp_seconds)
+        for: 10m
+        labels: {severity: critical}
+        annotations:
+          summary: No accelerator discovery success metric is available
+          runbook: docs/operations/slo.md#discovery
+      - alert: AcceleratorDiscoveryStale
+        expr: time() - max by (instance, provider) (accelerator_fabric_discovery_last_success_timestamp_seconds) > 120
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: Accelerator topology discovery has been stale for more than two minutes
+          runbook: docs/operations/slo.md#discovery
+      - alert: AcceleratorDiscoveryErrors
+        expr: sum by (instance, provider) (rate(accelerator_fabric_discovery_operations_total{result="error"}[5m])) / clamp_min(sum by (instance, provider) (rate(accelerator_fabric_discovery_operations_total[5m])), 0.001) > 0.05
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: More than five percent of accelerator discovery operations are failing
+          runbook: docs/operations/slo.md#discovery
+
+  - name: accelerator-fabric.control-plane
+    interval: 30s
+    rules:
+      - alert: AcceleratorControllerReconcileErrors
+        expr: sum by (controller) (rate(accelerator_fabric_controller_reconciles_total{result="error"}[5m])) / clamp_min(sum by (controller) (rate(accelerator_fabric_controller_reconciles_total[5m])), 0.001) > 0.05
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: Accelerator controller reconcile error ratio exceeds five percent
+          runbook: docs/operations/slo.md#control-plane
+      - alert: AcceleratorTopologyFitErrors
+        expr: sum by (operation) (rate(accelerator_fabric_scheduler_topologyfit_operations_total{result="error"}[5m])) > 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: TopologyFit is returning internal errors
+          runbook: docs/operations/slo.md#scheduling
+      - alert: AcceleratorSchedulerPodsUnschedulable
+        expr: scheduler_pending_pods{queue="unschedulable"} > 0
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: Accelerator scheduler has retained unschedulable Pods for fifteen minutes
+          runbook: docs/operations/slo.md#scheduling
+      - alert: AcceleratorCoschedulingPermitFailures
+        expr: sum(rate(scheduler_plugin_execution_duration_seconds_count{plugin="Coscheduling",extension_point="Permit",status!~"Success|Skip"}[5m])) > 0
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: Coscheduling Permit evaluations are failing or timing out
+          runbook: docs/operations/slo.md#scheduling
+
+  - name: accelerator-fabric.dra
+    interval: 30s
+    rules:
+      - alert: AcceleratorDRAPublishedDevicesMissing
+        expr: absent(accelerator_fabric_dra_published_devices)
+        for: 10m
+        labels: {severity: critical}
+        annotations:
+          summary: No node-local accelerator DRA inventory metric is available
+          runbook: docs/operations/slo.md#dra-data-plane
+      - alert: AcceleratorDRAPublishedDevicesZero
+        expr: max by (instance) (accelerator_fabric_dra_published_devices) == 0
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: A node-local accelerator DRA driver is publishing zero devices
+          runbook: docs/operations/slo.md#dra-data-plane
+      - alert: AcceleratorDRAOperationErrors
+        expr: sum by (instance, operation) (rate(accelerator_fabric_dra_operations_total{result="error"}[5m])) / clamp_min(sum by (instance, operation) (rate(accelerator_fabric_dra_operations_total[5m])), 0.001) > 0.01
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: A DRA operation error ratio exceeds one percent
+          runbook: docs/operations/slo.md#dra-data-plane

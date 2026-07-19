@@ -10,12 +10,13 @@
 | kubectl | `v1.36.2` client | One-minor skew from the v1.35.5 cluster |
 | scheduler-plugins | `v0.35.4-devel` | Coscheduling beta plugin; Kubernetes dependencies are unified to v1.35.5/v0.35.5 by this module's replace block |
 | CRD API | `scheduling.bupt.dev/v1alpha1` | Experimental API; breaking changes are still allowed |
-| Custom scheduler binary | `v1.35.5-accelerator.0.7.0` | W7 gang scheduling and queue fairness identity |
+| Custom scheduler binary | `v1.35.5-accelerator.0.8.0` | W8 discovery, multi-node DRA gang, and operations contract identity |
 | Kubernetes code-generator | `v0.35.5` | Matches the API/client-go patch baseline |
 | Device Plugin API | `v1beta1` from `k8s.io/kubelet v0.35.5` | Current kubelet registration and Allocate contract |
 | DRA API | `resource.k8s.io/v1` and kubelet DRA `v1` | Stable structured device allocation and node Prepare/Unprepare contract |
 | CDI spec | `0.3.0` | Runtime-compatible synthetic environment injection used by the DRA smoke path |
 | DRA reconciliation | `AcceleratorTopology` + `AcceleratorPlacementPolicy` | Project APIs are the source for ResourceSlices and ResourceClaimTemplates |
 | Metrics API | Prometheus text exposition through Kubernetes component-base | Low-cardinality alpha metrics with no external Service |
+| Prometheus rule validator | `prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996` | Digest-pinned `promtool check rules` for W8 alert syntax |
 
 Do not update a single Kubernetes module independently. Version upgrades require a dedicated change that runs unit tests, image build, kind smoke, and CRD server-side validation.

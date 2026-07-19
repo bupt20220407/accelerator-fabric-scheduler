@@ -107,10 +107,42 @@ var (
 			StabilityLevel: componentmetrics.ALPHA,
 		},
 	)
+	discoveryOperations = componentmetrics.NewCounterVec(
+		&componentmetrics.CounterOpts{
+			Namespace:      "accelerator_fabric",
+			Subsystem:      "discovery",
+			Name:           "operations_total",
+			Help:           "Topology discovery operations partitioned by provider and result.",
+			StabilityLevel: componentmetrics.ALPHA,
+		},
+		[]string{"provider", "result"},
+	)
+	discoveryOperationDuration = componentmetrics.NewHistogramVec(
+		&componentmetrics.HistogramOpts{
+			Namespace:      "accelerator_fabric",
+			Subsystem:      "discovery",
+			Name:           "operation_duration_seconds",
+			Help:           "Topology discovery operation latency in seconds.",
+			Buckets:        latencyBuckets,
+			StabilityLevel: componentmetrics.ALPHA,
+		},
+		[]string{"provider", "result"},
+	)
+	discoveryLastSuccess = componentmetrics.NewGaugeVec(
+		&componentmetrics.GaugeOpts{
+			Namespace:      "accelerator_fabric",
+			Subsystem:      "discovery",
+			Name:           "last_success_timestamp_seconds",
+			Help:           "Unix timestamp of the last successful topology discovery.",
+			StabilityLevel: componentmetrics.ALPHA,
+		},
+		[]string{"provider"},
+	)
 
 	registerSchedulerOnce  sync.Once
 	registerControllerOnce sync.Once
 	registerDRAOnce        sync.Once
+	registerDiscoveryOnce  sync.Once
 )
 
 var latencyBuckets = []float64{0.0001, 0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5}
@@ -158,6 +190,22 @@ func SetDRAPreparedClaims(count int) {
 
 func SetDRAPublishedDevices(count int) {
 	draPublishedDevices.Set(float64(count))
+}
+
+func RegisterDiscoveryMetrics() {
+	registerDiscoveryOnce.Do(func() {
+		legacyregistry.MustRegister(discoveryOperations, discoveryOperationDuration, discoveryLastSuccess)
+	})
+}
+
+func ObserveDiscovery(provider string, success bool, duration time.Duration) {
+	result := ResultError
+	if success {
+		result = ResultSuccess
+		discoveryLastSuccess.WithLabelValues(provider).SetToCurrentTime()
+	}
+	discoveryOperations.WithLabelValues(provider, result).Inc()
+	discoveryOperationDuration.WithLabelValues(provider, result).Observe(duration.Seconds())
 }
 
 func normalizeLabel(value string) string {

@@ -11,3 +11,10 @@ This repository does not grant a license for its own code. The following depende
 - Source: https://github.com/kubernetes-sigs/scheduler-plugins
 
 The `scheduling.x-k8s.io/v1alpha1` PodGroup schema in `config/crd/scheduling.x-k8s.io_podgroups.yaml` is adapted from that version's generated CRD. Copyright and license remain with the Kubernetes Authors under Apache License 2.0.
+
+## Prometheus
+
+- Tool image: `prom/prometheus:v3.5.0`
+- Use: `promtool check rules` validation only; the image is not redistributed
+- License: Apache License 2.0
+- Source: https://github.com/prometheus/prometheus

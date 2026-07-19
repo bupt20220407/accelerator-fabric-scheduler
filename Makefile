@@ -1,8 +1,8 @@
 SHELL := /bin/sh
-SCHEDULER_VERSION ?= v1.35.5-accelerator.0.7.0
+SCHEDULER_VERSION ?= v1.35.5-accelerator.0.8.0
 VERSION_LDFLAG := -X k8s.io/component-base/version.gitVersion=$(SCHEDULER_VERSION)
 
-.PHONY: generate fmt fmt-check vet test test-race build image kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke topology-aware-smoke fragmentation-smoke gang-smoke gang-fairness-smoke metrics-smoke smoke benchmark benchmark-allocation e2e kind-down verify
+.PHONY: generate fmt fmt-check vet test test-race build image kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke multi-node-dra-gang-smoke topology-aware-smoke fragmentation-smoke gang-smoke gang-fairness-smoke metrics-smoke monitoring-smoke smoke benchmark benchmark-allocation e2e kind-down verify
 
 generate:
 	./hack/generate.sh
@@ -28,6 +28,7 @@ build:
 	./hack/go.sh build -buildvcs=false -trimpath -ldflags '$(VERSION_LDFLAG)' -o bin/accelerator-scheduler ./cmd/scheduler
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-device-plugin ./cmd/synthetic-device-plugin
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/topology-controller ./cmd/topology-controller
+	./hack/go.sh build -buildvcs=false -trimpath -o bin/topology-discovery-agent ./cmd/topology-discovery-agent
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-workload ./cmd/synthetic-workload
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-dra-driver ./cmd/synthetic-dra-driver
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-dra-workload ./cmd/synthetic-dra-workload
@@ -57,6 +58,9 @@ device-smoke:
 dra-smoke:
 	./hack/smoke-dra.sh
 
+multi-node-dra-gang-smoke:
+	./hack/smoke-multi-node-dra-gang.sh
+
 topology-aware-smoke:
 	./hack/smoke-topologyfit.sh
 
@@ -72,13 +76,16 @@ gang-fairness-smoke:
 metrics-smoke:
 	./hack/smoke-metrics.sh
 
+monitoring-smoke:
+	./hack/validate-monitoring.sh
+
 benchmark:
 	./hack/benchmark.sh
 
 benchmark-allocation:
 	./hack/benchmark-allocation.sh
 
-e2e: kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke topology-aware-smoke fragmentation-smoke gang-smoke gang-fairness-smoke smoke metrics-smoke
+e2e: kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke multi-node-dra-gang-smoke topology-aware-smoke fragmentation-smoke gang-smoke gang-fairness-smoke smoke metrics-smoke monitoring-smoke
 
 kind-down:
 	./hack/kind-down.sh

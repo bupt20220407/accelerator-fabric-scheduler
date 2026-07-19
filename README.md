@@ -2,7 +2,7 @@
 
 `Accelerator Fabric Scheduler` is an out-of-tree Kubernetes scheduler for topology-aware GPU/NPU placement. It models NUMA locality, PCIe roots, and accelerator fabrics such as NVLink, HCCS, and XGMI.
 
-## Current milestone: W7 topology-aware gang scheduling
+## Current milestone: W8 node discovery and multi-node DRA gangs
 
 The repository now provides a reproducible policy-to-scheduling path:
 
@@ -10,6 +10,9 @@ The repository now provides a reproducible policy-to-scheduling path:
 - generated DeepCopy, clientset, fake client, listers, and shared informers cover both `scheduling.bupt.dev/v1alpha1` CRDs;
 - an immutable graph snapshot and copy-on-write cache track Ready, generation, heartbeat, and TTL state;
 - a controller validates topology objects and updates their status subresource;
+- a node-local discovery DaemonSet publishes topology through a pluggable provider interface instead of deployment-time YAML apply;
+- explicit ownership labels, content-equal legacy adoption, periodic discovery timestamps, and change-only observed generations separate Agent spec ownership from controller status ownership;
+- a fixture provider preserves deterministic kind behavior, while a conservative, command-runner-injected `nvidia-smi` provider has sanitized parser tests;
 - `PreFilter` resolves a namespaced placement policy into CycleState;
 - `Filter` implements single-NUMA, same-PCIe-root, fabric-clique, fabric-connected, and best-effort modes;
 - `Score` deterministically combines locality, fabric density, fragmentation, and headroom features;
@@ -31,10 +34,12 @@ The repository now provides a reproducible policy-to-scheduling path:
 - a version-matched `scheduling.x-k8s.io/v1alpha1` PodGroup CRD is installed with read-only scheduler RBAC;
 - gang tests combine Coscheduling with TopologyFit to allocate two disjoint four-device cliques and prove timeout cleanup;
 - competing equal-priority groups verify that older PodGroup creation time takes precedence even when the newer group's Pods are created first;
+- a three-member heterogeneous PodGroup consumes three independent node-local DRA claims on NVIDIA, Ascend, and AMD workers and verifies CDI identity plus cleanup;
+- digest-pinned promtool validation covers ten discovery, controller, scheduler, Coscheduling, and DRA alert rules with an explicit prototype SLO contract;
 - three kind workers publish eight synthetic NVIDIA, Ascend, or AMD resources through the kubelet Device Plugin API;
 - end-to-end tests prove both real kubelet Allocate calls and a topology-specific four-card-pass/five-card-reject decision.
 
-The DRA path has an authoritative synthetic claim-to-kubelet identity contract, while the legacy extended-resource/Device Plugin path remains advisory. W7 adds gang admission around scheduling cycles, but it does not turn the legacy advisory device IDs into an authoritative kubelet handoff. Pods must still reference generated DRA templates explicitly. Automatic DRA translation intentionally excludes `fabric-connected` and unknown-topology policies. The project does not discover physical accelerators or prove a real training-throughput improvement.
+The DRA path has an authoritative synthetic claim-to-kubelet identity contract, while the legacy extended-resource/Device Plugin path remains advisory. Gang admission does not turn legacy advisory device IDs into an authoritative kubelet handoff. Pods must still reference generated DRA templates explicitly. Automatic DRA translation intentionally excludes `fabric-connected` and unknown-topology policies. W8 implements and tests a vendor-shaped discovery adapter, but it does not run that adapter on physical GPUs or prove real training-throughput improvement.
 
 ## Prerequisites
 
@@ -71,7 +76,7 @@ spec:
 
 See `config/samples/high-bandwidth-training-policy.yaml` for a complete policy. Pods without the annotation retain neutral `TopologyFit` behavior.
 
-## Run the W7 end-to-end test
+## Run the W8 end-to-end test
 
 ```bash
 make e2e
@@ -80,6 +85,7 @@ make e2e
 The command creates a one-control-plane/three-worker kind cluster, builds and loads the image, installs the CRDs, and deploys the scheduler, topology controller, and synthetic Device Plugins. It verifies:
 
 - server-side CRD validation, topology Ready conditions, and fresh heartbeats;
+- node-local fixture Agents create or safely adopt all three topology objects, continuously refresh discovery timestamps, and expose success metrics;
 - eight published extended resources on each NVIDIA, Ascend, and AMD worker;
 - successful two-device kubelet Allocate calls for all three vendor resource names;
 - three node-scoped DRA ResourceSlice pools publish eight attributed devices each;
@@ -95,11 +101,13 @@ The command creates a one-control-plane/three-worker kind cluster, builds and lo
 - two four-device PodGroup members pass Permit together and occupy disjoint NVIDIA cliques;
 - an incomplete 4+5-device gang times out, triggers TopologyFit Unreserve, and leaves capacity available to a recovery Pod;
 - two fairness rounds admit the older equal-priority PodGroup before a newer group whose Pods were created first;
+- a three-member heterogeneous gang receives one NVIDIA, Ascend, and AMD node-local claim, consumes exact CDI identities, unprepares all claims, and leaves no generated objects;
 - scheduler, controller, and DRA health/Prometheus endpoints expose expected operation and state signals;
 - upstream scheduler framework metrics record nonzero Coscheduling evaluations, while gang logs prove Permit waiting;
 - an unannotated W1 compatibility Pod is still bound by the custom scheduler;
 - cleanup restores both AcceleratorTopology and ResourceSlice health to Healthy;
-- the image reports `v1.35.5-accelerator.0.7.0`, preventing a stale `:dev` image from passing.
+- promtool accepts all ten SLO/alert expressions from a digest-pinned Prometheus image;
+- the image reports `v1.35.5-accelerator.0.8.0`, preventing a stale `:dev` image from passing.
 
 Clean up with `make kind-down`. The default kind image is pinned by digest in `versions.lock.md`.
 
@@ -130,11 +138,14 @@ GANG_FAIRNESS_ROUNDS=10 make gang-fairness-smoke
 
 The checked-in W7 result is in `docs/reports/w7-gang-fairness-20260719.md`. The fairness harness pauses the custom scheduler while constructing a deterministic initial queue; it tests queue order, not production throughput, starvation freedom, or multi-tenant fairness.
 
+The checked-in W8 result is in `docs/reports/w8-discovery-dra-gang-20260719.md`. It records the W7-to-W8 ownership migration, heterogeneous gang allocation/cleanup, live scheduler metric labels, and the remaining physical-hardware and production-operations gaps.
+
 ## Repository map
 
 ```text
 cmd/scheduler/                  custom kube-scheduler entry point
 cmd/topology-controller/       topology status controller
+cmd/topology-discovery-agent/ node-local provider runner and topology publisher
 cmd/synthetic-device-plugin/   kubelet Device Plugin entry point
 cmd/synthetic-dra-driver/      kubelet DRA v1 driver and ResourceSlice publisher
 cmd/synthetic-dra-workload/    CDI allocation acceptance workload
@@ -147,19 +158,21 @@ pkg/topology/                   graph snapshots and concurrent cache
 pkg/deviceplugin/               synthetic Device Plugin service
 pkg/dra/                        DRA resources, persistent Prepare state, and CDI handoff
 pkg/observability/              low-cardinality component metrics and HTTP serving
+pkg/discovery/                  Agent ownership contract and fixture/NVIDIA providers
 pkg/fixtures/                   deterministic three-vendor topology models
 config/crd/                     v1alpha1 API schemas
 config/fixtures/                generated three-worker topologies
 config/smoke/                   scheduler, Allocate, and topology acceptance Pods
 config/experiments/             repeatable allocation, fragmentation, and gang workloads
 deploy/base/                    scheduler, controller, Device Plugins, and RBAC
+deploy/monitoring/              executable Prometheus alert rules
 docs/adr/                       architecture decisions and scope boundaries
 docs/reports/                   environment-specific reproducible baselines
 docs/testing/                   fault-injection coverage matrix
 hack/                           containerized Go and kind automation
 ```
 
-## W7 acceptance criteria
+## W8 acceptance criteria
 
 - `make verify` and `make e2e` pass from a clean checkout.
 - generated API code and fixture YAML are reproducible.
@@ -189,11 +202,17 @@ hack/                           containerized Go and kind automation
 - the default scheduler is not modified or replaced.
 - all Kubernetes modules remain on the locked v1.35.5/v0.35.5 baseline.
 - documentation does not imply exact device reservation or physical accelerator testing.
+- deployment no longer directly applies fixture topology YAML; three Agents own and refresh the objects.
+- unchanged refreshes preserve `observedGeneration`, changed discoveries increment it, and conflicting unmanaged/provider-owned objects are rejected.
+- sanitized `nvidia-smi` samples prove conservative parsing without asserting health, bandwidth, PCIe-root, or hardware validation.
+- a multi-node DRA gang uses one node-local claim per member across all three synthetic vendor pools.
+- all three gang claims are prepared, exposed through exact CDI identities, unprepared, and garbage collected with their templates.
+- ten Prometheus rules pass digest-pinned promtool validation, while the SLO document distinguishes executable configuration from production evidence.
 
-## Next milestone: W8
+## Next milestone: W9
 
-W8 should replace fixture publication with a pluggable discovery-provider interface and one vendor-shaped adapter, add multi-node DRA claim experiments, and define production SLO/alert rules. Physical hardware claims remain prohibited until a real vendor runtime and device inventory are available.
+W9 should run one provider against physical hardware, reconcile vendor health signals with hysteresis, and add a distributed-job controller or workload integration that owns PodGroup and per-member claim lifecycle. Scheduler restart during Permit, API outage, node reboot, and alert firing tests remain higher-value than adding more synthetic policy modes.
 
 ## Repository visibility and license
 
-The project is intended to remain private during early implementation. No open-source license is granted by this repository at W7; choose a license deliberately before making it public. Third-party dependency terms are recorded in `THIRD_PARTY_NOTICES.md`.
+The project is intended to remain private during early implementation. No open-source license is granted by this repository at W8; choose a license deliberately before making it public. Third-party dependency terms are recorded in `THIRD_PARTY_NOTICES.md`.
