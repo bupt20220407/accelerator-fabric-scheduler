@@ -10,10 +10,11 @@
 | kubectl | `v1.36.2` client | One-minor skew from the v1.35.5 cluster |
 | scheduler-plugins | `v0.35.4-devel` candidate, not yet imported | Phase 2 Coscheduling integration only |
 | CRD API | `scheduling.bupt.dev/v1alpha1` | Experimental API; breaking changes are still allowed |
-| Custom scheduler binary | `v1.35.5-accelerator.0.4.0` | W4b DRA v1 allocation handoff identity |
+| Custom scheduler binary | `v1.35.5-accelerator.0.5.0` | W5 policy/topology-to-DRA reconciliation identity |
 | Kubernetes code-generator | `v0.35.5` | Matches the API/client-go patch baseline |
 | Device Plugin API | `v1beta1` from `k8s.io/kubelet v0.35.5` | Current kubelet registration and Allocate contract |
 | DRA API | `resource.k8s.io/v1` and kubelet DRA `v1` | Stable structured device allocation and node Prepare/Unprepare contract |
 | CDI spec | `0.3.0` | Runtime-compatible synthetic environment injection used by the DRA smoke path |
+| DRA reconciliation | `AcceleratorTopology` + `AcceleratorPlacementPolicy` | Project APIs are the source for ResourceSlices and ResourceClaimTemplates |
 
 Do not update a single Kubernetes module independently. Version upgrades require a dedicated change that runs unit tests, image build, kind smoke, and CRD server-side validation.

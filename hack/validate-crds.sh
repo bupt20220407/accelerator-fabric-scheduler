@@ -9,4 +9,9 @@ if kubectl apply --dry-run=server -f test/fixtures/invalid-policy-weights.yaml >
   exit 1
 fi
 
-echo "CRD validation accepted valid samples and rejected invalid weights"
+if kubectl apply --dry-run=server -f test/fixtures/invalid-policy-dra-connected.yaml >/dev/null 2>&1; then
+  echo "unsupported DRA fabric-connected policy unexpectedly passed API server validation" >&2
+  exit 1
+fi
+
+echo "CRD validation accepted valid samples and rejected invalid weights/DRA mode"

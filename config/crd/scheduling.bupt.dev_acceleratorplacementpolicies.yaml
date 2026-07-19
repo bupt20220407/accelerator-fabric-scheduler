@@ -28,6 +28,11 @@ spec:
             spec:
               type: object
               required: [topologyMode, weights, failurePolicy]
+              x-kubernetes-validations:
+                - rule: "!has(self.dra) || self.topologyMode != 'fabric-connected'"
+                  message: DRA template generation does not support fabric-connected mode
+                - rule: "!has(self.dra) || !self.allowUnknownTopology"
+                  message: DRA template generation requires known topology
               properties:
                 vendor:
                   type: string
@@ -88,3 +93,12 @@ spec:
                 failurePolicy:
                   type: string
                   enum: [FailClosed, BestEffort]
+                dra:
+                  type: object
+                  required: [deviceCount]
+                  properties:
+                    deviceCount:
+                      type: integer
+                      format: int64
+                      minimum: 1
+                      maximum: 128

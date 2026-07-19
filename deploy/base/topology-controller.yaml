@@ -10,11 +10,14 @@ metadata:
   name: accelerator-topology-controller
 rules:
   - apiGroups: ["scheduling.bupt.dev"]
-    resources: ["acceleratortopologies"]
+    resources: ["acceleratortopologies", "acceleratorplacementpolicies"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["scheduling.bupt.dev"]
     resources: ["acceleratortopologies/status"]
     verbs: ["get", "patch", "update"]
+  - apiGroups: ["resource.k8s.io"]
+    resources: ["resourceclaimtemplates"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

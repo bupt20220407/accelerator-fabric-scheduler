@@ -1,0 +1,16 @@
+apiVersion: scheduling.bupt.dev/v1alpha1
+kind: AcceleratorPlacementPolicy
+metadata:
+  name: invalid-dra-connected
+  namespace: default
+spec:
+  topologyMode: fabric-connected
+  allowUnknownTopology: false
+  weights:
+    locality: 25
+    fabric: 25
+    fragmentation: 25
+    headroom: 25
+  failurePolicy: FailClosed
+  dra:
+    deviceCount: 4

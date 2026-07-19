@@ -129,6 +129,11 @@ type AcceleratorPlacementPolicySpec struct {
 	AllowUnknownTopology     bool              `json:"allowUnknownTopology,omitempty"`
 	Weights                  ScoreWeights      `json:"weights"`
 	FailurePolicy            FailurePolicy     `json:"failurePolicy"`
+	DRA                      *DRAParameters    `json:"dra,omitempty"`
+}
+
+type DRAParameters struct {
+	DeviceCount int64 `json:"deviceCount"`
 }
 
 type ScoreWeights struct {

@@ -22,6 +22,10 @@ func (d *cycleData) Clone() framework.StateData {
 	}
 	cloned := *d
 	cloned.policy.Products = append([]string(nil), d.policy.Products...)
+	if d.policy.DRA != nil {
+		draParameters := *d.policy.DRA
+		cloned.policy.DRA = &draParameters
+	}
 	if d.scores != nil {
 		cloned.scores = make(map[string]int64, len(d.scores))
 		for nodeName, score := range d.scores {

@@ -1,9 +1,13 @@
 package dra
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/bupt/accelerator-fabric-scheduler/pkg/fixtures"
+)
 
 func TestResourcesForNode(t *testing.T) {
-	resources, err := ResourcesForNode("accelerator-fabric-worker")
+	resources, err := ResourcesForTopology(fixtures.ThreeNodeTopologies()[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,7 +22,10 @@ func TestResourcesForNode(t *testing.T) {
 	if first.Attributes["fabricGroup"].StringValue == nil || *first.Attributes["fabricGroup"].StringValue != "nvlink-clique-0" {
 		t.Fatalf("fabric group attribute = %+v", first.Attributes["fabricGroup"])
 	}
-	if _, err := ResourcesForNode("missing-node"); err == nil {
-		t.Fatal("ResourcesForNode() accepted an unknown node")
+	if first.Attributes["fabricBandwidthGBps"].IntValue == nil || *first.Attributes["fabricBandwidthGBps"].IntValue != 450 {
+		t.Fatalf("fabric bandwidth attribute = %+v", first.Attributes["fabricBandwidthGBps"])
+	}
+	if _, err := ResourcesForTopology(nil); err == nil {
+		t.Fatal("ResourcesForTopology() accepted nil")
 	}
 }

@@ -2,7 +2,7 @@
 
 `Accelerator Fabric Scheduler` is an out-of-tree Kubernetes scheduler for topology-aware GPU/NPU placement. It models NUMA locality, PCIe roots, and accelerator fabrics such as NVLink, HCCS, and XGMI.
 
-## Current milestone: W4b authoritative DRA handoff
+## Current milestone: W5 project API to DRA reconciliation
 
 The repository now provides a reproducible policy-to-scheduling path:
 
@@ -20,10 +20,14 @@ The repository now provides a reproducible policy-to-scheduling path:
 - a kubelet DRA v1 driver consumes authoritative ResourceClaim allocation results and rejects cross-claim device reuse;
 - prepared claim ownership is persisted across driver restarts, then released idempotently by NodeUnprepareResources;
 - CDI injects the exact allocated pool/device IDs into the consuming synthetic container;
+- each DRA driver watches the typed AcceleratorTopology API and publishes ResourceSlices only from a current Ready topology;
+- topology links are reduced into conservative per-device fabric bandwidth and hop attributes;
+- optional `AcceleratorPlacementPolicy.spec.dra.deviceCount` creates a same-name, owner-managed ResourceClaimTemplate;
+- policy vendor, product, memory, health, locality, bandwidth, and hop constraints become native DRA CEL/matchAttribute rules;
 - three kind workers publish eight synthetic NVIDIA, Ascend, or AMD resources through the kubelet Device Plugin API;
 - end-to-end tests prove both real kubelet Allocate calls and a topology-specific four-card-pass/five-card-reject decision.
 
-The DRA path now has an authoritative synthetic claim-to-kubelet identity contract. The legacy extended-resource/Device Plugin path remains advisory and is retained for comparison. Neither path discovers or exposes physical accelerators, and the project still does **not** implement gang scheduling or prove a real training-throughput improvement. The placement-policy CRD also does not yet generate DRA claims automatically; the DRA smoke uses explicit native selectors and a fabric-group constraint.
+The DRA path has an authoritative synthetic claim-to-kubelet identity contract, while the legacy extended-resource/Device Plugin path remains advisory. W5 removes duplicated device and selector configuration for supported modes, but Pods must still reference the generated template explicitly. Automatic DRA translation intentionally excludes `fabric-connected` and unknown-topology policies. Neither path discovers physical accelerators, implements gang scheduling, or proves a real training-throughput improvement.
 
 ## Prerequisites
 
@@ -60,7 +64,7 @@ spec:
 
 See `config/samples/high-bandwidth-training-policy.yaml` for a complete policy. Pods without the annotation retain neutral `TopologyFit` behavior.
 
-## Run the W4b end-to-end test
+## Run the W5 end-to-end test
 
 ```bash
 make e2e
@@ -72,14 +76,17 @@ The command creates a one-control-plane/three-worker kind cluster, builds and lo
 - eight published extended resources on each NVIDIA, Ascend, and AMD worker;
 - successful two-device kubelet Allocate calls for all three vendor resource names;
 - three node-scoped DRA ResourceSlice pools publish eight attributed devices each;
-- a native ResourceClaim allocates four NVIDIA devices from one fabric group;
+- a topology health fault propagates into the NVIDIA ResourceSlice;
+- a PlacementPolicy generates a four-device ResourceClaimTemplate;
+- the generated claim excludes the unhealthy clique and allocates `gpu4` through `gpu7`;
 - kubelet NodePrepareResources creates CDI metadata and the container reads the exact claim UID and device IDs;
 - deleting the active driver Pod proves persisted prepared-claim recovery before NodeUnprepareResources releases it;
 - a four-device NVLink clique workload completes;
 - a five-device request remains unbound because `TopologyFit` rejects it, even though the NVIDIA node has scalar capacity for eight devices;
 - scheduler logs prove Reserve, PreBind verification, and PostBind release executed for the successful topology-aware Pod;
 - an unannotated W1 compatibility Pod is still bound by the custom scheduler;
-- the image reports `v1.35.5-accelerator.0.4.0`, preventing a stale `:dev` image from passing.
+- cleanup restores both AcceleratorTopology and ResourceSlice health to Healthy;
+- the image reports `v1.35.5-accelerator.0.5.0`, preventing a stale `:dev` image from passing.
 
 Clean up with `make kind-down`. The default kind image is pinned by digest in `versions.lock.md`.
 
@@ -92,6 +99,7 @@ cmd/synthetic-device-plugin/   kubelet Device Plugin entry point
 cmd/synthetic-dra-driver/      kubelet DRA v1 driver and ResourceSlice publisher
 cmd/synthetic-dra-workload/    CDI allocation acceptance workload
 pkg/plugin/topologyfit/         policy, selection, scoring, and reservation ledger
+pkg/controller/policy/          PlacementPolicy to ResourceClaimTemplate reconciler
 pkg/apis/                       typed v1alpha1 API
 pkg/generated/                  generated clients, listers, and informers
 pkg/topology/                   graph snapshots and concurrent cache
@@ -106,7 +114,7 @@ docs/adr/                       architecture decisions and scope boundaries
 hack/                           containerized Go and kind automation
 ```
 
-## W4b acceptance criteria
+## W5 acceptance criteria
 
 - `make verify` and `make e2e` pass from a clean checkout.
 - generated API code and fixture YAML are reproducible.
@@ -116,6 +124,9 @@ hack/                           containerized Go and kind automation
 - a four-device ResourceClaim allocation remains inside one NVIDIA fabric group.
 - ResourceClaim allocation IDs, NodePrepare response IDs, and container CDI IDs agree.
 - a driver restart recovers prepared ownership and the replacement handles Unprepare.
+- ResourceSlices are driven by Ready AcceleratorTopology objects rather than direct fixture reads.
+- a policy-created template carries the expected CEL selectors and matchAttribute constraint.
+- topology health changes affect native allocation and are restored after fault injection.
 - scheduler informers start and synchronize under read-only CRD RBAC.
 - the topology-specific positive and negative scheduling cases pass.
 - a real scheduler cycle emits Reserve, PreBind, and PostBind lifecycle evidence.
@@ -123,10 +134,10 @@ hack/                           containerized Go and kind automation
 - all Kubernetes modules remain on the locked v1.35.5/v0.35.5 baseline.
 - documentation does not imply exact device reservation or physical accelerator testing.
 
-## Next milestone: W5
+## Next milestone: W6
 
-W5 should reconcile `AcceleratorTopology` into ResourceSlices and translate `AcceleratorPlacementPolicy` into native ResourceClaim selectors and constraints, removing the duplicated fixture/policy configuration. It should then add health-change fault injection, allocation latency benchmarks, and multi-Pod fragmentation experiments. Gang scheduling remains a separate later milestone.
+W6 should add scheduler/controller/driver Prometheus metrics, allocation-latency benchmarks, repeated multi-Pod fragmentation experiments, and a documented fault matrix for stale topology, unhealthy links, driver downtime, claim conflicts, and API errors. Gang scheduling remains a separate later milestone.
 
 ## Repository visibility and license
 
-The project is intended to remain private during early implementation. No open-source license is granted by this repository at W4b; choose a license deliberately before making it public.
+The project is intended to remain private during early implementation. No open-source license is granted by this repository at W5; choose a license deliberately before making it public.

@@ -9,10 +9,12 @@ import (
 	"syscall"
 	"time"
 
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	controller "github.com/bupt/accelerator-fabric-scheduler/pkg/controller/topology"
+	policycontroller "github.com/bupt/accelerator-fabric-scheduler/pkg/controller/policy"
+	topologycontroller "github.com/bupt/accelerator-fabric-scheduler/pkg/controller/topology"
 	clientset "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
 	informers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
 )
@@ -30,13 +32,21 @@ func main() {
 	if err != nil {
 		log.Fatal(fmt.Errorf("create scheduling client: %w", err))
 	}
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Fatal(fmt.Errorf("create Kubernetes client: %w", err))
+	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 	factory := informers.NewSharedInformerFactory(client, 30*time.Second)
-	topologyController := controller.New(client, factory.Scheduling().V1alpha1().AcceleratorTopologies())
+	topologyController := topologycontroller.New(client, factory.Scheduling().V1alpha1().AcceleratorTopologies())
+	policyController := policycontroller.New(kubeClient, factory.Scheduling().V1alpha1().AcceleratorPlacementPolicies())
 	factory.Start(ctx.Done())
-	if err := topologyController.Run(ctx, *workers); err != nil {
+	errCh := make(chan error, 2)
+	go func() { errCh <- topologyController.Run(ctx, *workers) }()
+	go func() { errCh <- policyController.Run(ctx, *workers) }()
+	if err := <-errCh; err != nil {
 		log.Fatal(err)
 	}
 }

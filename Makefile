@@ -1,5 +1,5 @@
 SHELL := /bin/sh
-SCHEDULER_VERSION ?= v1.35.5-accelerator.0.4.0
+SCHEDULER_VERSION ?= v1.35.5-accelerator.0.5.0
 VERSION_LDFLAG := -X k8s.io/component-base/version.gitVersion=$(SCHEDULER_VERSION)
 
 .PHONY: generate fmt fmt-check vet test test-race build image kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke topology-aware-smoke smoke e2e kind-down verify

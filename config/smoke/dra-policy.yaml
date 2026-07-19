@@ -1,7 +1,7 @@
 apiVersion: scheduling.bupt.dev/v1alpha1
 kind: AcceleratorPlacementPolicy
 metadata:
-  name: high-bandwidth-training
+  name: synthetic-dra-nvidia
   namespace: default
 spec:
   vendor: nvidia

@@ -9,12 +9,17 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	toolscache "k8s.io/client-go/tools/cache"
 	"k8s.io/dynamic-resource-allocation/kubeletplugin"
+	"k8s.io/klog/v2"
 
 	"github.com/bupt/accelerator-fabric-scheduler/pkg/dra"
+	schedulingclient "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
+	schedulinginformers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
 )
 
 func main() {
@@ -34,15 +39,15 @@ func main() {
 	if err != nil {
 		log.Fatal(fmt.Errorf("create Kubernetes client: %w", err))
 	}
+	schedulingClient, err := schedulingclient.NewForConfig(config)
+	if err != nil {
+		log.Fatal(fmt.Errorf("create scheduling client: %w", err))
+	}
 	driver, err := dra.NewDriver(dra.DriverName, *nodeName, filepath.Join(*stateRoot, "prepared.json"), *cdiDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("recovered %d prepared DRA claims on node %s", driver.PreparedCount(), *nodeName)
-	resources, err := dra.ResourcesForNode(*nodeName)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
@@ -57,8 +62,16 @@ func main() {
 		log.Fatal(fmt.Errorf("start DRA kubelet plugin: %w", err))
 	}
 	defer helper.Stop()
-	if err := helper.PublishResources(ctx, resources); err != nil {
-		log.Fatal(fmt.Errorf("publish DRA resources: %w", err))
+	factory := schedulinginformers.NewSharedInformerFactory(schedulingClient, 30*time.Second)
+	topologyInformer := factory.Scheduling().V1alpha1().AcceleratorTopologies()
+	if _, err := dra.ObserveTopologies(ctx, topologyInformer, *nodeName, helper.PublishResources, time.Now, func(err error) {
+		klog.ErrorS(err, "publish DRA topology resources", "node", *nodeName)
+	}); err != nil {
+		log.Fatal(err)
+	}
+	factory.Start(ctx.Done())
+	if !toolscache.WaitForCacheSync(ctx.Done(), topologyInformer.Informer().HasSynced) {
+		log.Fatal("wait for topology informer cache sync")
 	}
 	<-ctx.Done()
 }

@@ -309,6 +309,14 @@ func readCycleData(state framework.CycleState) (*cycleData, *framework.Status) {
 }
 
 func validatePolicy(spec schedulingv1alpha1.AcceleratorPlacementPolicySpec) error {
+	if spec.DRA != nil {
+		if spec.DRA.DeviceCount < 1 {
+			return fmt.Errorf("DRA device count must be positive")
+		}
+		if spec.TopologyMode == schedulingv1alpha1.TopologyModeFabricConnected || spec.AllowUnknownTopology {
+			return fmt.Errorf("DRA template generation requires known non-connected topology mode")
+		}
+	}
 	switch spec.Vendor {
 	case "", schedulingv1alpha1.VendorAny, schedulingv1alpha1.VendorNVIDIA, schedulingv1alpha1.VendorHuawei, schedulingv1alpha1.VendorAMD:
 	default:
