@@ -12,9 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8stesting "k8s.io/client-go/testing"
 
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
-	fakeclient "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/fake"
-	informers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
+	fakeclient "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/fake"
+	informers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
 )
 
 func TestControllerWritesReadyStatus(t *testing.T) {

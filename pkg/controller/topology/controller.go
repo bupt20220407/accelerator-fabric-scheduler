@@ -14,11 +14,11 @@ import (
 	toolscache "k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	clientset "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
-	informers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
-	listers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/listers/scheduling/v1alpha1"
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
-	graph "github.com/bupt/accelerator-fabric-scheduler/pkg/topology"
+	clientset "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
+	informers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
+	listers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/listers/scheduling/v1alpha1"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/observability"
+	graph "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/topology"
 )
 
 const (

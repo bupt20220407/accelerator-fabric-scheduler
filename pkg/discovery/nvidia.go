@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
 )
 
 type CommandRunner interface {

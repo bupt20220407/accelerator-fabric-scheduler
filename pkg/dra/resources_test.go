@@ -3,7 +3,7 @@ package dra
 import (
 	"testing"
 
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/fixtures"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/fixtures"
 )
 
 func TestResourcesForNode(t *testing.T) {

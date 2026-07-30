@@ -5,8 +5,8 @@ import (
 
 	toolscache "k8s.io/client-go/tools/cache"
 
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
-	schedulinginformers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
+	schedulinginformers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
 )
 
 type ErrorHandler func(error)

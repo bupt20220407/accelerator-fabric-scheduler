@@ -10,9 +10,9 @@ import (
 	toolscache "k8s.io/client-go/tools/cache"
 	"k8s.io/dynamic-resource-allocation/resourceslice"
 
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
-	schedulinginformers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
+	schedulinginformers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/observability"
 )
 
 const topologyTTL = 2 * time.Minute

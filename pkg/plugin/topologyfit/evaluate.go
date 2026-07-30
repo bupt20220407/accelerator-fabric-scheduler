@@ -8,9 +8,9 @@ import (
 	framework "k8s.io/kube-scheduler/framework"
 	corev1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
 
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/topology"
-	topologycache "github.com/bupt/accelerator-fabric-scheduler/pkg/topology/cache"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/topology"
+	topologycache "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/topology/cache"
 )
 
 type evaluation struct {

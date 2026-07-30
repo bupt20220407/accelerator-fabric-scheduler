@@ -14,9 +14,9 @@ import (
 	toolscache "k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	schedulinginformers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
-	schedulinglisters "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/listers/scheduling/v1alpha1"
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
+	schedulinginformers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
+	schedulinglisters "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/listers/scheduling/v1alpha1"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/observability"
 )
 
 type Controller struct {

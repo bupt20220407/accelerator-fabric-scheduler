@@ -9,10 +9,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/dynamic-resource-allocation/resourceslice"
 
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/fixtures"
-	fakeclient "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/fake"
-	informers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/fixtures"
+	fakeclient "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/fake"
+	informers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
 )
 
 func TestObserveTopologiesPublishesReadyAndClearsNotReady(t *testing.T) {

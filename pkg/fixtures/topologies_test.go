@@ -3,7 +3,7 @@ package fixtures
 import (
 	"testing"
 
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/topology"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/topology"
 )
 
 func TestThreeNodeTopologies(t *testing.T) {

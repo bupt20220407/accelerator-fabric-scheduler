@@ -8,8 +8,8 @@ package v1alpha1
 import (
 	http "net/http"
 
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
-	scheme "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/scheme"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
+	scheme "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 

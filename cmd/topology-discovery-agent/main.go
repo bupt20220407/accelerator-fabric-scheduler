@@ -13,9 +13,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/discovery"
-	clientset "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/discovery"
+	clientset "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/observability"
 )
 
 func main() {

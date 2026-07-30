@@ -18,7 +18,7 @@ import (
 	"k8s.io/dynamic-resource-allocation/kubeletplugin"
 	"k8s.io/klog/v2"
 
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/observability"
 )
 
 const stateVersion = 1

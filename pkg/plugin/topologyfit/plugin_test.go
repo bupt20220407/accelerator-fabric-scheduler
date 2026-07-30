@@ -14,10 +14,10 @@ import (
 	framework "k8s.io/kube-scheduler/framework"
 	internalframework "k8s.io/kubernetes/pkg/scheduler/framework"
 
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/fixtures"
-	listers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/listers/scheduling/v1alpha1"
-	topologycache "github.com/bupt/accelerator-fabric-scheduler/pkg/topology/cache"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/fixtures"
+	listers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/listers/scheduling/v1alpha1"
+	topologycache "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/topology/cache"
 )
 
 const testNodeName = "accelerator-fabric-worker"

@@ -6,8 +6,8 @@
 package fake
 
 import (
-	v1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/typed/scheduling/v1alpha1"
+	v1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/typed/scheduling/v1alpha1"
 	gentype "k8s.io/client-go/gentype"
 )
 

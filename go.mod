@@ -1,4 +1,4 @@
-module github.com/bupt/accelerator-fabric-scheduler
+module github.com/bupt20220407/accelerator-fabric-scheduler
 
 go 1.25.0
 

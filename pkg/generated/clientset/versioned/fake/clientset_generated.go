@@ -6,9 +6,9 @@
 package fake
 
 import (
-	clientset "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/typed/scheduling/v1alpha1"
-	fakeschedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/typed/scheduling/v1alpha1/fake"
+	clientset "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/typed/scheduling/v1alpha1"
+	fakeschedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/typed/scheduling/v1alpha1/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"

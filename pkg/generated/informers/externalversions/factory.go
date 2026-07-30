@@ -10,9 +10,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
-	internalinterfaces "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/internalinterfaces"
-	scheduling "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling"
+	versioned "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
+	internalinterfaces "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/internalinterfaces"
+	scheduling "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

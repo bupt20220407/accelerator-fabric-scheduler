@@ -6,7 +6,7 @@
 package v1alpha1
 
 import (
-	internalinterfaces "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/internalinterfaces"
+	internalinterfaces "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to all the informers in this group version.

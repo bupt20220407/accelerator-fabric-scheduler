@@ -12,8 +12,8 @@ import (
 	_ "sigs.k8s.io/scheduler-plugins/apis/config/scheme"
 	"sigs.k8s.io/scheduler-plugins/pkg/coscheduling"
 
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/plugin/topologyfit"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/observability"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/plugin/topologyfit"
 )
 
 func main() {

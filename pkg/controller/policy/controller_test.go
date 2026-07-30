@@ -12,8 +12,8 @@ import (
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	k8stesting "k8s.io/client-go/testing"
 
-	fakeclient "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/fake"
-	informers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
+	fakeclient "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/fake"
+	informers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
 )
 
 func TestControllerReconcilesAndRemovesTemplate(t *testing.T) {

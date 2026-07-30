@@ -6,7 +6,7 @@ import (
 
 	"sigs.k8s.io/yaml"
 
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/fixtures"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/fixtures"
 )
 
 func main() {

@@ -13,11 +13,11 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	policycontroller "github.com/bupt/accelerator-fabric-scheduler/pkg/controller/policy"
-	topologycontroller "github.com/bupt/accelerator-fabric-scheduler/pkg/controller/topology"
-	clientset "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
-	informers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
+	policycontroller "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/controller/policy"
+	topologycontroller "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/controller/topology"
+	clientset "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
+	informers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/observability"
 )
 
 func main() {

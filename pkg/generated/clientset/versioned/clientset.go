@@ -9,7 +9,7 @@ import (
 	fmt "fmt"
 	http "net/http"
 
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/typed/scheduling/v1alpha1"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned/typed/scheduling/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

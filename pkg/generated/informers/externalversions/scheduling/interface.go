@@ -6,8 +6,8 @@
 package scheduling
 
 import (
-	internalinterfaces "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
+	internalinterfaces "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions/scheduling/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

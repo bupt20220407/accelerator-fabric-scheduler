@@ -10,7 +10,7 @@ import (
 
 	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/deviceplugin"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/deviceplugin"
 )
 
 func main() {

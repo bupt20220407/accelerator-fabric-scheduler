@@ -12,12 +12,12 @@ import (
 	"k8s.io/klog/v2"
 	framework "k8s.io/kube-scheduler/framework"
 
-	schedulingv1alpha1 "github.com/bupt/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
-	clientset "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
-	informers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
-	listers "github.com/bupt/accelerator-fabric-scheduler/pkg/generated/listers/scheduling/v1alpha1"
-	"github.com/bupt/accelerator-fabric-scheduler/pkg/observability"
-	topologycache "github.com/bupt/accelerator-fabric-scheduler/pkg/topology/cache"
+	schedulingv1alpha1 "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/apis/scheduling/v1alpha1"
+	clientset "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/clientset/versioned"
+	informers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/informers/externalversions"
+	listers "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/generated/listers/scheduling/v1alpha1"
+	"github.com/bupt20220407/accelerator-fabric-scheduler/pkg/observability"
+	topologycache "github.com/bupt20220407/accelerator-fabric-scheduler/pkg/topology/cache"
 )
 
 const (
