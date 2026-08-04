@@ -1,6 +1,7 @@
 # Third-party notices
 
-This repository does not grant a license for its own code. The following dependency retains its upstream license:
+Project-authored code is licensed under the Apache License 2.0. The following
+dependencies and adapted material retain their upstream licenses:
 
 ## Kubernetes scheduler-plugins
 

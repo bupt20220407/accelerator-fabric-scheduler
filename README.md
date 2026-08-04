@@ -1,6 +1,12 @@
 # Accelerator Fabric Scheduler
 
+[![verify](https://github.com/bupt20220407/accelerator-fabric-scheduler/actions/workflows/verify.yaml/badge.svg)](https://github.com/bupt20220407/accelerator-fabric-scheduler/actions/workflows/verify.yaml)
+
 `Accelerator Fabric Scheduler` is an out-of-tree Kubernetes scheduler for topology-aware GPU/NPU placement. It models NUMA locality, PCIe roots, and accelerator fabrics such as NVLink, HCCS, and XGMI.
+
+> **Status:** `v0.1.0` engineering research prototype. The checked-in evidence
+> uses deterministic synthetic accelerator inventories and local kind clusters;
+> it does not establish physical-accelerator performance or production readiness.
 
 ## Current milestone: W10 controller retries and executable alerts
 
@@ -235,4 +241,6 @@ The next milestone should run one provider against physical hardware, reconcile 
 
 ## Repository visibility and license
 
-The project is intended to remain private during early implementation. No open-source license is granted by this repository at W10; choose a license deliberately before making it public. Third-party dependency terms are recorded in `THIRD_PARTY_NOTICES.md`.
+The project is released under the [Apache License 2.0](LICENSE). Third-party
+dependency terms and adapted material are recorded in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
