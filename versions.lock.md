@@ -5,6 +5,7 @@
 | Kubernetes modules | `v1.35.5` / `v0.35.5` | One minor and patch across scheduler staging modules |
 | Go | `1.25.5` | Patch release in the Kubernetes 1.35 supported Go line |
 | Go image | `golang:1.25.5-bookworm@sha256:d9132cce84391efab786495288756d60e1da215b1f94e87860aeefc3d4c45b6d` | Reproducible local and image builds |
+| Console toolchain | Node.js `24` with dependency versions locked by `frontend/package-lock.json` | React/Vite production build and tests; Node is not present in the runtime image |
 | kind | `v0.32.0` | Verified local CLI version |
 | kind node | `kindest/node@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95` (`v1.35.5`) | Verified from the image's `kubeadm version` |
 | kubectl | `v1.36.2` client | One-minor skew from the v1.35.5 cluster |

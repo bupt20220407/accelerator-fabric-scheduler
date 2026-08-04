@@ -6,3 +6,5 @@ dist/
 coverage.out
 *.log
 evidence/
+frontend/node_modules/
+frontend/dist/

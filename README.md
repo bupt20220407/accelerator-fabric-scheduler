@@ -66,6 +66,45 @@ This runs formatting checks, `go vet`, unit tests, the race detector, and builds
 make generate
 ```
 
+## Run the demo console
+
+The browser console turns the checked-in three-vendor fixture into an
+interactive scheduling demonstration. It shows component health, device
+fabrics, Filter/Score evidence, reservation choices, ResourceClaim/CDI
+identity, PodGroup admission, and a policy simulator covering all five
+topology modes.
+
+The console is intentionally a deterministic replay. **Baseline** presents the
+W10 fixture, while **Fault drill** withdraws the AMD topology and ResourceSlice
+pool. Running the simulator changes only in-memory browser state; it never
+reads from or mutates a Kubernetes cluster.
+
+Start the development server with:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Open `http://127.0.0.1:5174/console/`. Verify a production frontend with
+`npm test`, `npm run typecheck`, and `npm run build`.
+
+The normal project image still starts the scheduler. The same image also
+contains the compiled console and a separate static server for demonstrations:
+
+```bash
+docker build -t accelerator-fabric-scheduler:demo .
+docker run --rm -p 8080:8080 \
+  --entrypoint /demo-console \
+  accelerator-fabric-scheduler:demo \
+  --address 0.0.0.0:8080 \
+  --directory /frontend/dist
+```
+
+Open `http://127.0.0.1:8080/console/`. This alternate entry point does not run
+the scheduler or require cluster credentials.
+
 ## Use a placement policy
 
 Create an `AcceleratorPlacementPolicy` in the workload namespace, then annotate a Pod that requests exactly one extended accelerator resource:
@@ -167,6 +206,7 @@ cmd/synthetic-device-plugin/   kubelet Device Plugin entry point
 cmd/synthetic-dra-driver/      kubelet DRA v1 driver and ResourceSlice publisher
 cmd/synthetic-dra-workload/    CDI allocation acceptance workload
 cmd/synthetic-gang-workload/   holdable gang and fairness acceptance workload
+cmd/demo-console/              optional static server for the replay console
 pkg/plugin/topologyfit/         policy, selection, scoring, and reservation ledger
 pkg/controller/policy/          PlacementPolicy to ResourceClaimTemplate reconciler
 pkg/apis/                       typed v1alpha1 API
@@ -187,6 +227,7 @@ docs/adr/                       architecture decisions and scope boundaries
 docs/reports/                   environment-specific reproducible baselines
 docs/testing/                   fault-injection coverage matrix
 hack/                           containerized Go and kind automation
+frontend/                       responsive fixture replay and policy simulator
 ```
 
 ## W10 acceptance criteria

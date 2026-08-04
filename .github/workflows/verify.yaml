@@ -20,6 +20,12 @@ jobs:
         with:
           go-version: 1.25.5
           cache: true
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - name: Verify formatting
         run: make fmt-check
       - name: Verify generated code and fixtures
@@ -32,3 +38,5 @@ jobs:
         run: make test-race
       - name: Build scheduler
         run: make build
+      - name: Verify demo console
+        run: make console-verify
