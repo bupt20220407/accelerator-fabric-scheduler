@@ -2,7 +2,7 @@ SHELL := /bin/sh
 SCHEDULER_VERSION ?= v1.35.5-accelerator.0.10.0
 VERSION_LDFLAG := -X k8s.io/component-base/version.gitVersion=$(SCHEDULER_VERSION)
 
-.PHONY: generate fmt fmt-check vet test test-race build image kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke multi-node-dra-gang-smoke dra-gang-failover-smoke topology-aware-smoke fragmentation-smoke gang-smoke gang-fairness-smoke metrics-smoke monitoring-smoke smoke benchmark benchmark-allocation e2e kind-down verify
+.PHONY: generate fmt fmt-check vet test test-race build console-verify image kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke multi-node-dra-gang-smoke dra-gang-failover-smoke topology-aware-smoke fragmentation-smoke gang-smoke gang-fairness-smoke metrics-smoke monitoring-smoke smoke benchmark benchmark-allocation e2e kind-down verify
 
 generate:
 	./hack/generate.sh
@@ -33,6 +33,10 @@ build:
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-dra-driver ./cmd/synthetic-dra-driver
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-dra-workload ./cmd/synthetic-dra-workload
 	./hack/go.sh build -buildvcs=false -trimpath -o bin/synthetic-gang-workload ./cmd/synthetic-gang-workload
+	./hack/go.sh build -buildvcs=false -trimpath -o bin/demo-console ./cmd/demo-console
+
+console-verify:
+	cd frontend && npm ci && npm test && npm run typecheck && npm run build
 
 image:
 	docker build --build-arg SCHEDULER_VERSION='$(SCHEDULER_VERSION)' -t "$${SCHEDULER_IMAGE:-accelerator-fabric-scheduler:dev}" .
@@ -93,4 +97,4 @@ e2e: kind-up deploy crd-smoke topology-smoke device-smoke dra-smoke dra-gang-fai
 kind-down:
 	./hack/kind-down.sh
 
-verify: fmt-check vet test test-race build
+verify: fmt-check vet test test-race build console-verify

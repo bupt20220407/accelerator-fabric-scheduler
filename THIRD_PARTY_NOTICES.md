@@ -19,3 +19,22 @@ The `scheduling.x-k8s.io/v1alpha1` PodGroup schema in `config/crd/scheduling.x-k
 - Use: `promtool check rules` validation only; the image is not redistributed
 - License: Apache License 2.0
 - Source: https://github.com/prometheus/prometheus
+
+## Demo console dependencies
+
+The browser console installs, but does not modify, the following direct
+dependencies. Their transitive dependencies retain their own upstream terms.
+
+| Component | Version | License | Source |
+|---|---|---|---|
+| React | 19.2.8 | MIT | https://github.com/facebook/react |
+| React DOM | 19.2.8 | MIT | https://github.com/facebook/react |
+| React Flow (XYFlow) | 12.11.2 | MIT | https://github.com/xyflow/xyflow |
+| Recharts | 3.10.1 | MIT | https://github.com/recharts/recharts |
+| Lucide React | 1.28.0 | ISC | https://github.com/lucide-icons/lucide |
+| Vite | 8.2.0 | MIT | https://github.com/vitejs/vite |
+| TypeScript | 7.0.2 | Apache-2.0 | https://github.com/microsoft/TypeScript |
+| Vitest | 4.1.10 | MIT | https://github.com/vitest-dev/vitest |
+
+Node.js is used only in the console build stage and is not copied into the
+final runtime image. Its upstream license remains with the Node.js project.
