@@ -4,7 +4,7 @@
 
 `Accelerator Fabric Scheduler` is an out-of-tree Kubernetes scheduler for topology-aware GPU/NPU placement. It models NUMA locality, PCIe roots, and accelerator fabrics such as NVLink, HCCS, and XGMI.
 
-> **Status:** `v0.1.0` engineering research prototype. The checked-in evidence
+> **Status:** `v0.1.x` engineering research prototype. The checked-in evidence
 > uses deterministic synthetic accelerator inventories and local kind clusters;
 > it does not establish physical-accelerator performance or production readiness.
 
@@ -89,6 +89,25 @@ npm run dev
 
 Open `http://127.0.0.1:5174/console/`. Verify a production frontend with
 `npm test`, `npm run typecheck`, and `npm run build`.
+
+### Two-minute demonstration
+
+1. Start with **Baseline** and use the overview to establish scheduler,
+   controller, discovery, and DRA health across the three-vendor fixture.
+2. Open the fabric view and compare NUMA, PCIe-root, and NVLink/HCCS/XGMI
+   relationships instead of relying on scalar accelerator capacity alone.
+3. Run the policy simulator for a four-device `fabric-clique` request, then
+   compare its deterministic Filter, Score, and selected-device evidence with
+   an infeasible five-device request.
+4. Inspect ResourceClaim, NodePrepare, and CDI identity to distinguish the
+   authoritative DRA handoff from the advisory legacy extended-resource path.
+5. Select **Fault drill** to withdraw the AMD topology and ResourceSlice pool,
+   then show FailClosed behavior, PodGroup waiting, and rollback without a
+   partial device allocation or Pod binding.
+
+The simulator and fault drill mutate only browser memory, so this path is
+deterministic and safe for interviews without a Kubernetes cluster or physical
+accelerators.
 
 The normal project image still starts the scheduler. The same image also
 contains the compiled console and a separate static server for demonstrations:
